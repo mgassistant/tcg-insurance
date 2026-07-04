@@ -8,7 +8,7 @@ const SOURCE = "tcg-insurance.com";
 // Email notification (Resend) — optional, degrades gracefully if unset.
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const NOTIFY_TO = process.env.LEAD_NOTIFY_TO || "";
-const NOTIFY_FROM = process.env.LEAD_NOTIFY_FROM || "TCG Insurance <leads@tcg-insurance.com>";
+const NOTIFY_FROM = process.env.LEAD_NOTIFY_FROM || "TCG Insurance <support@tcg-insurance.com>";
 
 const VALUE_LABELS: Record<string, string> = {
   under_10k: "Under $10k",

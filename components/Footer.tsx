@@ -11,6 +11,8 @@ export default function Footer() {
           <Link href="/#how">How it works</Link>
           <Link href="/#faq">FAQ</Link>
           <Link href="/#quote">Get a quote</Link>
+          <a href="tel:8009330710">(800) 933-0710</a>
+          <a href="mailto:support@tcg-insurance.com">support@tcg-insurance.com</a>
         </div>
         <span className="mono">© {year} TCG INSURANCE · COVERAGE MAY BE AVAILABLE SUBJECT TO ELIGIBILITY</span>
       </div>

@@ -16,7 +16,7 @@ export default function Navigation() {
         </div>
         <div className="nav-cta">
           <span className="nav-phone">
-            Talk to an agent · <strong>(800) 555-0142</strong>
+            Talk to an agent · <strong>(800) 933-0710</strong>
           </span>
           <Link className="btn btn-holo btn-sm" href="/#quote">
             Get a quote

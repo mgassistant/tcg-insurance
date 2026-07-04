@@ -29,8 +29,8 @@ export default function HomePage() {
               <Link className="btn btn-holo btn-lg" href="#quote">
                 Get a free quote
               </Link>
-              <a className="btn btn-ghost btn-lg" href="tel:8005550142">
-                Call (800) 555-0142
+              <a className="btn btn-ghost btn-lg" href="tel:8009330710">
+                Call (800) 933-0710
               </a>
             </div>
             <div className="hero-proof">
@@ -275,8 +275,8 @@ export default function HomePage() {
           <Link className="btn btn-holo btn-lg" href="#quote">
             Get a free quote
           </Link>
-          <a className="btn btn-ghost btn-lg" href="tel:8005550142">
-            Call (800) 555-0142
+          <a className="btn btn-ghost btn-lg" href="tel:8009330710">
+            Call (800) 933-0710
           </a>
         </div>
       </section>
