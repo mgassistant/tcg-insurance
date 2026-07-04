@@ -1,11 +1,27 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function QuoteForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const tsRef = useRef<number>(Date.now());
+  const [prefill, setPrefill] = useState<{ name: string; email: string; phone: string }>({
+    name: "",
+    email: "",
+    phone: "",
+  });
+
+  // Prefill from URL params (e.g. handoff from poke-trade.com protect pages)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    setPrefill({
+      name: p.get("name") || "",
+      email: p.get("email") || "",
+      phone: p.get("phone") || "",
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -69,17 +85,17 @@ export default function QuoteForm() {
       <div className="f-row">
         <div className="field">
           <label htmlFor="name">Full name</label>
-          <input id="name" name="name" type="text" required placeholder="Jordan Reyes" />
+          <input id="name" name="name" type="text" required placeholder="Jordan Reyes" defaultValue={prefill.name} key={`n-${prefill.name}`} />
         </div>
         <div className="field">
           <label htmlFor="phone">Phone</label>
-          <input id="phone" name="phone" type="tel" required placeholder="(555) 123-4567" />
+          <input id="phone" name="phone" type="tel" required placeholder="(555) 123-4567" defaultValue={prefill.phone} key={`p-${prefill.phone}`} />
         </div>
       </div>
 
       <div className="field">
         <label htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" required placeholder="you@email.com" />
+        <input id="email" name="email" type="email" required placeholder="you@email.com" defaultValue={prefill.email} key={`e-${prefill.email}`} />
       </div>
 
       <div className="f-row">
