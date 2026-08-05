@@ -65,8 +65,10 @@ export interface CategoryFieldDef {
 export interface CategorySpec {
   // Ordered field definitions shown for this category.
   fields: CategoryFieldDef[];
-  // Categories requiring the ">$15K income from use" confirmation.
+  // Categories requiring the ">$15K income from use" Yes/No (cameras/instruments).
   incomeConfirmation?: boolean;
+  // Categories requiring "When and how are they stored?" (cards/memorabilia/collectibles).
+  requiresStorage?: boolean;
 }
 
 // Per-category specs. Categories NOT listed fall back to a generic spec.
@@ -179,6 +181,7 @@ export const CATEGORY_SPECS: Record<string, CategorySpec> = {
         consilium: "Serial Number",
       },
     ],
+    requiresStorage: true,
   },
   "Sports Memorabilia": {
     fields: [
@@ -195,6 +198,7 @@ export const CATEGORY_SPECS: Record<string, CategorySpec> = {
         consilium: "Serial Number",
       },
     ],
+    requiresStorage: true,
   },
   "Memorabilia & Autographs": {
     fields: [
@@ -211,6 +215,20 @@ export const CATEGORY_SPECS: Record<string, CategorySpec> = {
         consilium: "Serial Number",
       },
     ],
+    requiresStorage: true,
+  },
+  Coins: {
+    fields: [
+      { key: "name", label: "Coin / Item name", placeholder: "e.g. 1909-S VDB Lincoln Cent", consilium: "Name" },
+      { key: "grade", label: "Grade (required — must be graded)", placeholder: "e.g. PCGS MS65", consilium: "Serial Number" },
+    ],
+  },
+  Stamps: {
+    fields: [
+      { key: "name", label: "Stamp / Item name", placeholder: "e.g. Inverted Jenny", consilium: "Name" },
+      { key: "grade", label: "Grade (required — must be graded)", placeholder: "e.g. PSE 90", consilium: "Serial Number" },
+    ],
+    requiresStorage: true,
   },
 };
 
@@ -238,8 +256,15 @@ export interface IntakeItem {
   value: number; // USD
   // Category-specific captured values keyed by CategoryFieldDef.key.
   fields?: Record<string, string>;
-  // Cameras / musical instruments: client confirmed <$15K income from use.
+  // Cameras / musical instruments: does the client earn > $15K/yr from USE of
+  // the item? true = commercial exposure = decline. Required Yes/No for those
+  // categories (undefined = not answered).
+  earnsOver15k?: boolean;
+  // Client-facing confirmation checkbox: "I do NOT earn > $15K from use."
+  // true = confirmed compliant. Mirror of earnsOver15k (earnsOver15k = !confirmed).
   useIncomeConfirmed?: boolean;
+  // Trading cards / memorabilia / collectibles: "When and how are they stored?"
+  storage?: string;
 }
 
 export interface IntakeClient {
@@ -284,33 +309,101 @@ function normState(state: string): string {
   return (state || "").trim().toUpperCase();
 }
 
-// Manual-underwriting-review thresholds by category-class and state.
-// Returns the review threshold (total USD) for a given class, or null.
-export function reviewThresholdForCategory(
-  category: string,
-  state: string
-): number | null {
-  const isCaFl = CA_FL.has(normState(state));
-  const c = category.toLowerCase();
+// ═══════════════════════════════════════════════════════════════════
+// WAX Broker Underwriting Guide (April 2026) — AUTHORITATIVE.
+// These numbers supersede any earlier thresholds.
+// ═══════════════════════════════════════════════════════════════════
+
+// ---- Canonical underwriting classes ----
+export type UWClass =
+  | "watches"
+  | "jewelry"
+  | "handbags"
+  | "cardsMemorabilia" // trading cards, memorabilia, stamps & collectibles
+  | "fineArt"
+  | "coins"
+  | "cameras"
+  | "instruments"
+  | "wine"
+  | "fursSilverMisc"
+  | "other";
+
+export function classForCategory(category: string): UWClass {
+  const c = (category || "").toLowerCase();
+  if (c.includes("watch")) return "watches";
+  if (c.includes("jewelry") || c.includes("jewellery")) return "jewelry";
+  if (c.includes("handbag")) return "handbags";
+  if (c.includes("fine art") || c === "art") return "fineArt";
+  if (c.includes("coin") || c.includes("stamp") || c.includes("currency"))
+    // Coins have their own review threshold; stamps ride with cards/collectibles.
+    return c.includes("coin") ? "coins" : "cardsMemorabilia";
+  if (c.includes("camera")) return "cameras";
+  if (c.includes("musical") || c.includes("instrument")) return "instruments";
+  if (c.includes("wine") || c.includes("liquor")) return "wine";
   if (
     c.includes("trading card") ||
     c.includes("memorabilia") ||
     c.includes("autograph") ||
     c.includes("sports")
-  ) {
-    return isCaFl ? 100_000 : 250_000;
+  )
+    return "cardsMemorabilia";
+  return "other";
+}
+
+// ---- Per-item appraisal / bill-of-sale threshold (Guide #1) ----
+// Watches $50K; everything else $25K.
+export function appraisalThresholdForCategory(category: string): number {
+  return classForCategory(category) === "watches"
+    ? APPRAISAL_WATCH_THRESHOLD
+    : APPRAISAL_ITEM_THRESHOLD;
+}
+
+// Numismatics (coins/stamps/currency) require a grade on every item.
+export function requiresGrade(category: string): boolean {
+  const c = (category || "").toLowerCase();
+  return c.includes("coin") || c.includes("stamp") || c.includes("currency");
+}
+
+// ---- Manual-underwriting-review / credit-eligibility thresholds (Guide #2) ----
+// Returns the class total above which underwriting review / credits apply.
+// (Straight-through <= threshold; review above.) State-aware for CA/FL on
+// cards/memorabilia/collectibles and fine art.
+export function reviewThresholdForCategory(
+  category: string,
+  state: string
+): number | null {
+  const isCaFl = CA_FL.has(normState(state));
+  switch (classForCategory(category)) {
+    case "watches":
+    case "jewelry":
+      return 200_000;
+    case "handbags":
+    case "cardsMemorabilia":
+      return isCaFl ? 100_000 : 200_000;
+    case "fineArt":
+      return isCaFl ? 250_000 : 750_000;
+    case "coins":
+      return 250_000;
+    case "cameras":
+      return 50_000;
+    case "instruments":
+      return 100_000;
+    case "fursSilverMisc":
+      return 50_000;
+    case "wine":
+      // Wine is manual-underwriting; flag on material totals.
+      return 200_000;
+    default:
+      return null;
   }
-  if (c.includes("fine art")) {
-    return isCaFl ? 250_000 : 750_000;
-  }
-  if (c.includes("coin")) {
-    return 250_000;
-  }
-  if (c.includes("wine") || c.includes("liquor")) {
-    // Wine is a blanket/manual-underwriting class; flag on any material total.
-    return 250_000;
-  }
-  return null;
+}
+
+// ---- Eligibility screening / hard declines (Guide #4) ----
+export interface EligibilityIssue {
+  itemIndex: number; // -1 for whole-intake issues
+  category: string;
+  message: string;
+  severity: "decline" | "warn";
 }
 
 export interface DerivedFlags {
@@ -324,6 +417,10 @@ export interface DerivedFlags {
   underwritingReasons: string[];
   // Blanket item exceeds the $50k per-item limit.
   blanketPerItemExceeded: boolean;
+  // A class total exceeds $200K → credit-eligible; occupation/LinkedIn matter.
+  creditEligible: boolean;
+  // Hard-decline / not-accepted screening results.
+  eligibilityIssues: EligibilityIssue[];
 }
 
 function itemLabel(item: IntakeItem, idx: number): string {
@@ -346,11 +443,7 @@ export function deriveFlags(intake: QuoteIntake): DerivedFlags {
     const val = Number(item.value) || 0;
     totalValue += val;
 
-    const isWatch = item.category.toLowerCase().includes("watch");
-    const appraisalThreshold = isWatch
-      ? APPRAISAL_WATCH_THRESHOLD
-      : APPRAISAL_ITEM_THRESHOLD;
-    if (val > appraisalThreshold) {
+    if (val > appraisalThresholdForCategory(item.category)) {
       needsAppraisalItems.push(
         `${itemShortLabel(item) || itemLabel(item, idx)} ($${val.toLocaleString()})`
       );
@@ -363,26 +456,31 @@ export function deriveFlags(intake: QuoteIntake): DerivedFlags {
     categoryTotals[item.category] = (categoryTotals[item.category] || 0) + val;
   });
 
-  // Underwriting review: aggregate each item's category into "classes" and
-  // compare against the class threshold.
+  // Underwriting review: aggregate by canonical UW class and compare each
+  // class total against ITS threshold (state-aware).
   const underwritingReasons: string[] = [];
-  const classTotals: Record<string, { total: number; sample: string }> = {};
+  const byClass: Record<string, { total: number; sample: string }> = {};
   items.forEach((item) => {
-    const threshold = reviewThresholdForCategory(item.category, state);
-    if (threshold == null) return;
-    const key = `${threshold}`;
-    if (!classTotals[key]) classTotals[key] = { total: 0, sample: item.category };
-    classTotals[key].total += Number(item.value) || 0;
+    const cls = classForCategory(item.category);
+    if (!byClass[cls]) byClass[cls] = { total: 0, sample: item.category };
+    byClass[cls].total += Number(item.value) || 0;
   });
-  for (const { total, sample } of Object.values(classTotals)) {
+  let creditEligible = false;
+  for (const { total, sample } of Object.values(byClass)) {
     const threshold = reviewThresholdForCategory(sample, state);
     if (threshold != null && total > threshold) {
+      const caFlNote =
+        CA_FL.has(normState(state)) &&
+        (classForCategory(sample) === "cardsMemorabilia" ||
+          classForCategory(sample) === "handbags" ||
+          classForCategory(sample) === "fineArt")
+          ? " (CA/FL threshold)"
+          : "";
       underwritingReasons.push(
-        `${sample}-class total ($${total.toLocaleString()}) exceeds $${threshold.toLocaleString()}${
-          CA_FL.has(normState(state)) ? " (CA/FL threshold)" : ""
-        }`
+        `${sample}-class total (${usd(total)}) exceeds ${usd(threshold)}${caFlNote}`
       );
     }
+    if (total > 200_000) creditEligible = true;
   }
 
   return {
@@ -393,7 +491,88 @@ export function deriveFlags(intake: QuoteIntake): DerivedFlags {
     mayNeedUnderwriting: underwritingReasons.length > 0,
     underwritingReasons,
     blanketPerItemExceeded,
+    creditEligible,
+    eligibilityIssues: screenEligibility(intake),
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Eligibility screening (Guide #4 hard declines / not-accepted).
+// Returns issues to surface; does NOT block submission.
+// ═══════════════════════════════════════════════════════════════════
+const ICED_OUT_RE = /(iced.?out|cuban link|cuban-link|aftermarket (diamond|stone))/i;
+const FIREARM_RE = /(firearm|gun|rifle|pistol|revolver|shotgun)/i;
+const PERSONAL_PROPERTY_RE =
+  /(worn clothing|everyday (shoes|clothes)|military uniform|non-?vintage electronics|power tools)/i;
+
+export function screenEligibility(intake: QuoteIntake): EligibilityIssue[] {
+  const issues: EligibilityIssue[] = [];
+  (intake.items || []).forEach((item, i) => {
+    const cls = classForCategory(item.category);
+    const blob = [
+      item.category,
+      item.brandType,
+      item.description,
+      ...(item.fields ? Object.values(item.fields) : []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    // Cameras / musical instruments earning > $15K from use → commercial → decline.
+    if ((cls === "cameras" || cls === "instruments") && item.earnsOver15k === true) {
+      issues.push({
+        itemIndex: i,
+        category: item.category,
+        severity: "decline",
+        message:
+          "Earns more than $15K/yr from use → this is a commercial exposure and WAX declines it. Contact us about a commercial option.",
+      });
+    }
+
+    // Iced-out jewelry / Cuban link / aftermarket stones / custom iced-out watches.
+    if ((cls === "jewelry" || cls === "watches") && ICED_OUT_RE.test(blob)) {
+      issues.push({
+        itemIndex: i,
+        category: item.category,
+        severity: "warn",
+        message:
+          "\"Iced out\" pieces (aftermarket diamonds/stones), Cuban link chains/bracelets, and custom iced-out watches are not accepted by WAX. Contact us.",
+      });
+    }
+
+    // Firearms: only >100 yrs old WITH documentation, quoted under "Other".
+    if (FIREARM_RE.test(blob)) {
+      if (cls !== "other") {
+        issues.push({
+          itemIndex: i,
+          category: item.category,
+          severity: "warn",
+          message:
+            "Firearms are only eligible if 100+ years old with documentation, and must be quoted under category \"Other\". Modern firearms are not covered.",
+        });
+      } else {
+        issues.push({
+          itemIndex: i,
+          category: item.category,
+          severity: "warn",
+          message:
+            "Firearm noted under \"Other\": eligible only if 100+ years old with documentation. We'll confirm.",
+        });
+      }
+    }
+
+    // General personal property.
+    if (PERSONAL_PROPERTY_RE.test(blob)) {
+      issues.push({
+        itemIndex: i,
+        category: item.category,
+        severity: "warn",
+        message:
+          "General personal property (regularly worn clothing/shoes, in-use uniforms, non-vintage electronics/tools) is not covered by WAX.",
+      });
+    }
+  });
+  return issues;
 }
 
 // ---- Formatting helpers ----
@@ -445,17 +624,23 @@ export function consiliumItemRows(item: IntakeItem): [string, string][] {
     rows.push([display, value]);
   }
 
-  // Always include Current Value last.
+  // Storage question for cards / memorabilia / collectibles.
+  if (spec.requiresStorage) {
+    rows.push(["Storage (when & how stored)", (item.storage || "").trim() || "— not provided"]);
+  }
+
+  // Always include Current Value.
   rows.push(["Current Value", usd(item.value)]);
 
-  // Income confirmation for cameras / instruments.
-  const spec2 = specForCategory(item.category);
-  if (spec2.incomeConfirmation) {
+  // Income Yes/No for cameras / instruments.
+  if (spec.incomeConfirmation) {
     rows.push([
-      "Income-from-use confirmation",
-      item.useIncomeConfirmed
-        ? "Confirmed: does NOT earn > $15K from use of the item(s)"
-        : "NOT confirmed — follow up before quoting",
+      "Earns > $15K/yr from use?",
+      item.earnsOver15k === true
+        ? "YES — commercial exposure, WAX DECLINES (follow up)"
+        : item.earnsOver15k === false
+        ? "No — eligible (personal use)"
+        : "Not answered — follow up before quoting",
     ]);
   }
   return rows;
@@ -577,6 +762,11 @@ export function formatConsiliumEmailHTML(
       `<li><b>Blanket per-item limit exceeded</b> ($50,000) — item(s) may need to be scheduled.</li>`
     );
   }
+  if (flags.creditEligible) {
+    flagBits.push(
+      `<li><b>Credit-eligible quote</b> (a class total exceeds $200K) — occupation &amp; LinkedIn matter for underwriting.</li>`
+    );
+  }
   if (intake.hasDocumentation) {
     flagBits.push(
       `<li>Client indicated they can provide appraisal/receipt on request${
@@ -584,6 +774,18 @@ export function formatConsiliumEmailHTML(
       }</li>`
     );
   }
+
+  // Eligibility screening (declines / not-accepted).
+  const eligBits = (flags.eligibilityIssues || []).map(
+    (e) =>
+      `<li style="color:${e.severity === "decline" ? "#B00020" : "#8A6D00"}"><b>${
+        e.severity === "decline" ? "DECLINE" : "Not accepted / check"
+      } — ${esc(e.category)}:</b> ${esc(e.message)}</li>`
+  );
+  const eligBlock = eligBits.length
+    ? `<h3 style="margin:22px 0 8px;font:600 15px sans-serif;color:#B00020">⚠ Eligibility Screening</h3>
+       <ul style="font:14px sans-serif;margin:0;padding-left:20px">${eligBits.join("")}</ul>`
+    : "";
 
   const flagsBlock = flagBits.length
     ? `<h3 style="margin:22px 0 8px;font:600 15px sans-serif;color:#0C0D18">4 · Underwriting Flags</h3>
@@ -603,6 +805,7 @@ export function formatConsiliumEmailHTML(
     ${coverageBlock}
     ${itemsBlock}
     ${flagsBlock}
+    ${eligBlock}
     <p style="color:#999;font:12px sans-serif;margin-top:26px;border-top:1px solid #eee;padding-top:10px">
       Source: ${esc(source)} · This is a quote request, not a bound policy. No binding
       authority until WAX approves. Newly acquired items covered at ${NEWLY_ACQUIRED_PCT}% of

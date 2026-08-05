@@ -69,7 +69,15 @@ function normalizeItem(raw: unknown): IntakeItem {
     serialOrGrade: String(o.serialOrGrade || "").trim(),
     value: Number(o.value) || 0,
     fields,
-    useIncomeConfirmed: Boolean(o.useIncomeConfirmed),
+    earnsOver15k:
+      o.earnsOver15k === undefined || o.earnsOver15k === null
+        ? undefined
+        : Boolean(o.earnsOver15k),
+    useIncomeConfirmed:
+      o.useIncomeConfirmed === undefined || o.useIncomeConfirmed === null
+        ? undefined
+        : Boolean(o.useIncomeConfirmed),
+    storage: o.storage === undefined ? undefined : String(o.storage ?? "").trim(),
   };
 }
 
