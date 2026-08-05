@@ -4,6 +4,7 @@ import {
   deriveFlags,
   formatConsiliumEmailHTML,
   formatConsiliumText,
+  specForCategory,
   usd,
   type QuoteIntake,
   type IntakeItem,
@@ -56,12 +57,19 @@ async function sendEmail(subject: string, html: string) {
 // ═══════════════════════════════════════════════════════════════════
 function normalizeItem(raw: unknown): IntakeItem {
   const o = (raw || {}) as Record<string, unknown>;
+  const fieldsIn = (o.fields || {}) as Record<string, unknown>;
+  const fields: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fieldsIn)) {
+    fields[k] = String(v ?? "").trim();
+  }
   return {
     category: String(o.category || "Other").trim(),
     brandType: String(o.brandType || "").trim(),
     description: String(o.description || "").trim(),
     serialOrGrade: String(o.serialOrGrade || "").trim(),
     value: Number(o.value) || 0,
+    fields,
+    useIncomeConfirmed: Boolean(o.useIncomeConfirmed),
   };
 }
 
@@ -94,6 +102,12 @@ async function handleV2(body: Record<string, unknown>) {
   if (!client.email.includes("@") || !client.email.includes(".")) missing.push("email");
   if (items.length === 0) missing.push("at least one item");
   if (items.some((it) => !(it.value > 0))) missing.push("a value for each item");
+  // Cameras / musical instruments require the <$15K-income-from-use confirmation.
+  const needsIncomeConfirm = items.some(
+    (it) => specForCategory(it.category).incomeConfirmation && !it.useIncomeConfirmed
+  );
+  if (needsIncomeConfirm)
+    missing.push("income-from-use confirmation for cameras/instruments");
 
   if (missing.length > 0) {
     return NextResponse.json(

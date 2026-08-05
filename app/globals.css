@@ -271,6 +271,8 @@ h1 { font-size: clamp(2.5rem, 5.2vw, 4.1rem); font-weight: 800; margin-bottom: 2
 .doc-block { display: grid; gap: 12px; padding: 16px; border: 1px dashed var(--line); border-radius: 14px; }
 .doc-check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; color: var(--text); cursor: pointer; }
 .doc-check input { margin-top: 3px; accent-color: #8AA6FF; }
+.income-check { padding: 12px 14px; border: 1px solid rgba(232, 193, 90, 0.35); background: rgba(232, 193, 90, 0.06); border-radius: 10px; font-size: 0.86rem; }
+.income-check small { color: var(--muted); }
 
 /* Review */
 .review { gap: 14px; }

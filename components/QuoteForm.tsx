@@ -10,6 +10,7 @@ import {
   NEWLY_ACQUIRED_PCT,
   NEWLY_ACQUIRED_DAYS,
   reviewThresholdForCategory,
+  specForCategory,
   usd,
   type CoverageType,
 } from "@/lib/intake";
@@ -18,11 +19,13 @@ import {
 type FormItem = {
   id: number;
   category: string;
-  brandType: string;
-  description: string;
-  gradingCo: string; // only used when category === "Trading Cards"
-  grade: string; // grade value for trading cards
-  serialOrModel: string; // for everything else
+  description: string; // optional free-text note kept for all categories
+  // Category-specific values keyed by CategoryFieldDef.key (from lib/intake).
+  fields: Record<string, string>;
+  // Trading Cards convenience: grading company chosen via dropdown, combined
+  // with the "grade" field on submit into the spec's gradeAuth field.
+  gradingCo: string;
+  useIncomeConfirmed: boolean; // cameras / instruments
   value: string;
 };
 
@@ -45,11 +48,10 @@ function newItem(category = "Trading Cards"): FormItem {
   return {
     id: ITEM_SEQ++,
     category,
-    brandType: "",
     description: "",
+    fields: {},
     gradingCo: "PSA",
-    grade: "",
-    serialOrModel: "",
+    useIncomeConfirmed: false,
     value: "",
   };
 }
@@ -148,6 +150,13 @@ export default function QuoteForm() {
   function updateItem(id: number, patch: Partial<FormItem>) {
     setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
+  function updateItemField(id: number, key: string, value: string) {
+    setItems((arr) =>
+      arr.map((it) =>
+        it.id === id ? { ...it, fields: { ...it.fields, [key]: value } } : it
+      )
+    );
+  }
   function addItem() {
     setItems((arr) => [...arr, newItem()]);
   }
@@ -170,6 +179,9 @@ export default function QuoteForm() {
       for (const it of items) {
         if (!it.category) return "Every item needs a category.";
         if (!(parseFloat(it.value) > 0)) return "Every item needs a current value.";
+        if (specForCategory(it.category).incomeConfirmation && !it.useIncomeConfirmed) {
+          return "Please confirm the <$15K income-from-use statement for cameras/instruments.";
+        }
       }
     }
     return null;
@@ -203,16 +215,38 @@ export default function QuoteForm() {
     setStatus("loading");
 
     const payloadItems = items.map((it) => {
+      const spec = specForCategory(it.category);
       const isCard = it.category.toLowerCase().includes("trading card");
-      const serialOrGrade = isCard
-        ? [it.gradingCo, it.grade].filter(Boolean).join(" ").trim()
-        : it.serialOrModel.trim();
+
+      // Assemble the category-specific fields bag from the spec.
+      const fields: Record<string, string> = {};
+      for (const def of spec.fields) {
+        let v = (it.fields[def.key] || "").trim();
+        // Trading Cards: fold the grading-company dropdown into gradeAuth.
+        if (isCard && def.key === "gradeAuth") {
+          v = [it.gradingCo, it.fields.gradeAuth || ""].filter(Boolean).join(" ").trim();
+        }
+        fields[def.key] = v;
+      }
+
+      // Legacy/summary fields for backward compat.
+      const brandDef = spec.fields.find((d) => d.consilium === "Brand of Artist");
+      const nameDef = spec.fields.find((d) => d.consilium === "Name");
+      const serialDef = spec.fields.find((d) => d.consilium === "Serial Number");
+      const brandType = brandDef ? fields[brandDef.key] : "";
+      const description = [nameDef ? fields[nameDef.key] : "", it.description.trim()]
+        .filter(Boolean)
+        .join(" — ");
+      const serialOrGrade = serialDef ? fields[serialDef.key] : "";
+
       return {
         category: it.category,
-        brandType: it.brandType.trim(),
-        description: it.description.trim(),
+        brandType,
+        description,
         serialOrGrade,
         value: parseFloat(it.value) || 0,
+        fields,
+        useIncomeConfirmed: it.useIncomeConfirmed,
       };
     });
 
@@ -522,6 +556,7 @@ export default function QuoteForm() {
 
           {items.map((it, idx) => {
             const isCard = it.category.toLowerCase().includes("trading card");
+            const spec = specForCategory(it.category);
             const v = parseFloat(it.value) || 0;
             const th = it.category.toLowerCase().includes("watch")
               ? APPRAISAL_WATCH_THRESHOLD
@@ -542,99 +577,107 @@ export default function QuoteForm() {
                     </button>
                   )}
                 </div>
-                <div className="f-row">
-                  <div className="field">
-                    <label>Category</label>
-                    <select
-                      value={it.category}
-                      onChange={(e) => updateItem(it.id, { category: e.target.value })}
-                    >
-                      {ITEM_CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="field">
-                    <label>Brand / Type</label>
-                    <input
-                      value={it.brandType}
-                      onChange={(e) => updateItem(it.id, { brandType: e.target.value })}
-                      placeholder={isCard ? "e.g. Pokémon" : "e.g. Rolex"}
-                    />
-                  </div>
-                </div>
+
                 <div className="field">
-                  <label>Description</label>
+                  <label>Category</label>
+                  <select
+                    value={it.category}
+                    onChange={(e) => updateItem(it.id, { category: e.target.value })}
+                  >
+                    {ITEM_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Category-adaptive fields (from lib/intake CATEGORY_SPECS) */}
+                {spec.fields.map((def) => {
+                  // Trading Cards: pair the grading-company dropdown with grade.
+                  if (isCard && def.key === "gradeAuth") {
+                    return (
+                      <div className="f-row" key={def.key}>
+                        <div className="field">
+                          <label>Grading Co.</label>
+                          <select
+                            value={it.gradingCo}
+                            onChange={(e) =>
+                              updateItem(it.id, { gradingCo: e.target.value })
+                            }
+                          >
+                            {GRADING_COMPANIES.map((g) => (
+                              <option key={g} value={g}>
+                                {g}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label>Grade</label>
+                          <input
+                            value={it.fields[def.key] || ""}
+                            onChange={(e) =>
+                              updateItemField(it.id, def.key, e.target.value)
+                            }
+                            placeholder="e.g. 10"
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="field" key={def.key}>
+                      <label>{def.label}</label>
+                      <input
+                        value={it.fields[def.key] || ""}
+                        onChange={(e) =>
+                          updateItemField(it.id, def.key, e.target.value)
+                        }
+                        placeholder={def.placeholder}
+                      />
+                    </div>
+                  );
+                })}
+
+                {/* Optional free-text note for any category */}
+                <div className="field">
+                  <label>Notes (optional)</label>
                   <input
                     value={it.description}
                     onChange={(e) => updateItem(it.id, { description: e.target.value })}
-                    placeholder={
-                      isCard
-                        ? "e.g. 1999 Base Set Charizard, holo"
-                        : "e.g. Submariner Date, 41mm"
-                    }
+                    placeholder="Anything else underwriting should know"
                   />
                 </div>
-                {isCard ? (
-                  <div className="f-row f-row-3">
-                    <div className="field">
-                      <label>Grading Co.</label>
-                      <select
-                        value={it.gradingCo}
-                        onChange={(e) => updateItem(it.id, { gradingCo: e.target.value })}
-                      >
-                        {GRADING_COMPANIES.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>Grade</label>
-                      <input
-                        value={it.grade}
-                        onChange={(e) => updateItem(it.id, { grade: e.target.value })}
-                        placeholder="e.g. 10"
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Current value (USD)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={it.value}
-                        onChange={(e) => updateItem(it.id, { value: e.target.value })}
-                        placeholder="e.g. 12000"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="f-row">
-                    <div className="field">
-                      <label>Serial / Model</label>
-                      <input
-                        value={it.serialOrModel}
-                        onChange={(e) =>
-                          updateItem(it.id, { serialOrModel: e.target.value })
-                        }
-                        placeholder="Serial no. or model ref."
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Current value (USD)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={it.value}
-                        onChange={(e) => updateItem(it.id, { value: e.target.value })}
-                        placeholder="e.g. 12000"
-                      />
-                    </div>
-                  </div>
+
+                <div className="field">
+                  <label>Current value (USD)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={it.value}
+                    onChange={(e) => updateItem(it.id, { value: e.target.value })}
+                    placeholder="e.g. 12000"
+                  />
+                </div>
+
+                {/* Cameras / musical instruments: required income confirmation */}
+                {spec.incomeConfirmation && (
+                  <label className="doc-check income-check">
+                    <input
+                      type="checkbox"
+                      checked={it.useIncomeConfirmed}
+                      onChange={(e) =>
+                        updateItem(it.id, { useIncomeConfirmed: e.target.checked })
+                      }
+                    />
+                    <span>
+                      I confirm I do <b>not</b> earn more than $15,000 from the use of
+                      this item. <small>(Required for cameras &amp; instruments.)</small>
+                    </span>
+                  </label>
                 )}
+
                 {needsAppraisal && (
                   <div className="note note-warn item-note">
                     Items over {usd(th)} require an appraisal or bill of sale (within 3
@@ -739,9 +782,19 @@ export default function QuoteForm() {
           <div className="rev-items">
             {items.map((it, i) => {
               const isCard = it.category.toLowerCase().includes("trading card");
-              const grade = isCard
-                ? [it.gradingCo, it.grade].filter(Boolean).join(" ")
-                : it.serialOrModel;
+              const spec = specForCategory(it.category);
+              // Build a readable summary from the spec fields (folding grading co).
+              const parts = spec.fields
+                .map((def) => {
+                  if (isCard && def.key === "gradeAuth") {
+                    return [it.gradingCo, it.fields[def.key] || ""]
+                      .filter(Boolean)
+                      .join(" ");
+                  }
+                  return (it.fields[def.key] || "").trim();
+                })
+                .filter(Boolean);
+              if (it.description.trim()) parts.push(it.description.trim());
               return (
                 <div className="rev-item" key={it.id}>
                   <div className="rev-item-top">
@@ -750,10 +803,7 @@ export default function QuoteForm() {
                     </b>
                     <span className="rev-val">{usd(parseFloat(it.value) || 0)}</span>
                   </div>
-                  <div className="rev-item-sub">
-                    {[it.brandType, it.description, grade].filter(Boolean).join(" · ") ||
-                      "—"}
-                  </div>
+                  <div className="rev-item-sub">{parts.join(" · ") || "—"}</div>
                 </div>
               );
             })}

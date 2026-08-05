@@ -36,15 +36,210 @@ export const GRADING_COMPANIES = ["PSA", "BGS", "CGC", "SGC", "CSG", "Other"] as
 
 export type CoverageType = "scheduled" | "blanket";
 
+// ═══════════════════════════════════════════════════════════════════
+// CATEGORY FIELD SPEC (WAX "Item Detail Requirements" guide)
+// Single source of truth: the form renders these inputs per category,
+// and the Consilium email maps each captured value to its target field
+// in the portal (Brand of Artist / Name / Serial Number / Reference
+// Number / Attachments). `consilium` is the portal box each field maps
+// into; when the mapping is non-obvious the email surfaces it in parens.
+// ═══════════════════════════════════════════════════════════════════
+
+export type ConsiliumField =
+  | "Brand of Artist"
+  | "Name"
+  | "Serial Number"
+  | "Reference Number"
+  | "Attachments";
+
+export interface CategoryFieldDef {
+  key: string; // stored in item.fields[key]
+  label: string; // form label
+  placeholder?: string;
+  consilium: ConsiliumField; // which Consilium box it maps to
+  // Multiple defs can map to the same Consilium box (e.g. Jewelry type+material
+  // both go to "Brand of Artist"); `group` lets the email join them.
+  group?: string;
+}
+
+export interface CategorySpec {
+  // Ordered field definitions shown for this category.
+  fields: CategoryFieldDef[];
+  // Categories requiring the ">$15K income from use" confirmation.
+  incomeConfirmation?: boolean;
+}
+
+// Per-category specs. Categories NOT listed fall back to a generic spec.
+export const CATEGORY_SPECS: Record<string, CategorySpec> = {
+  Watches: {
+    fields: [
+      { key: "brand", label: "Brand", placeholder: "e.g. Rolex", consilium: "Brand of Artist" },
+      { key: "model", label: "Model", placeholder: "e.g. Submariner", consilium: "Name" },
+      {
+        key: "refNumber",
+        label: "Reference Number",
+        placeholder: "e.g. 116500LN (if available)",
+        consilium: "Reference Number",
+      },
+      {
+        key: "serialNumber",
+        label: "Serial Number",
+        placeholder: "if available",
+        consilium: "Serial Number",
+      },
+    ],
+  },
+  Jewelry: {
+    fields: [
+      {
+        key: "jewelryType",
+        label: "Type of jewelry",
+        placeholder: "e.g. ring, necklace",
+        consilium: "Brand of Artist",
+        group: "brand",
+      },
+      {
+        key: "material",
+        label: "Material",
+        placeholder: "e.g. gold, platinum",
+        consilium: "Brand of Artist",
+        group: "brand",
+      },
+      {
+        key: "fourCs",
+        label: "The 4 C's (Cut, Color, Clarity, Carat)",
+        placeholder: "e.g. Excellent, F, VS1, 1.2ct",
+        consilium: "Name",
+      },
+      {
+        key: "giaOrSerial",
+        label: "GIA or Serial Number",
+        placeholder: "if available",
+        consilium: "Serial Number",
+      },
+    ],
+  },
+  "Fine Art": {
+    fields: [
+      {
+        key: "artist",
+        label: "Artist name",
+        placeholder: "e.g. Roy Lichtenstein",
+        consilium: "Brand of Artist",
+      },
+      {
+        key: "artworkNameYear",
+        label: "Artwork name & year",
+        placeholder: "e.g. Whaam!, 1963",
+        consilium: "Name",
+      },
+      {
+        key: "medium",
+        label: "Medium",
+        placeholder: "e.g. painting, sculpture",
+        consilium: "Serial Number",
+      },
+      {
+        key: "dimensions",
+        label: "Dimensions",
+        placeholder: "e.g. 72 x 36",
+        consilium: "Reference Number",
+      },
+    ],
+  },
+  "Vintage Cameras": {
+    fields: [
+      { key: "brand", label: "Brand / Make", placeholder: "e.g. Leica", consilium: "Brand of Artist" },
+      { key: "model", label: "Model", placeholder: "e.g. M3", consilium: "Name" },
+      { key: "serialNumber", label: "Serial Number", placeholder: "if available", consilium: "Serial Number" },
+    ],
+    incomeConfirmation: true,
+  },
+  "Musical Instruments": {
+    fields: [
+      { key: "brand", label: "Brand / Maker", placeholder: "e.g. Gibson", consilium: "Brand of Artist" },
+      { key: "model", label: "Model", placeholder: "e.g. Les Paul '59", consilium: "Name" },
+      { key: "serialNumber", label: "Serial Number", placeholder: "if available", consilium: "Serial Number" },
+    ],
+    incomeConfirmation: true,
+  },
+  // MG's core niche — not in the WAX doc; sensible card fields.
+  "Trading Cards": {
+    fields: [
+      {
+        key: "cardName",
+        label: "Player / Set / Card name",
+        placeholder: "e.g. 1999 Base Set Charizard",
+        consilium: "Name",
+      },
+      {
+        key: "gradeAuth",
+        label: "Grading Co. + Grade",
+        placeholder: "e.g. PSA 10",
+        consilium: "Serial Number",
+      },
+    ],
+  },
+  "Sports Memorabilia": {
+    fields: [
+      {
+        key: "itemName",
+        label: "Player / Team / Item name",
+        placeholder: "e.g. Kobe Bryant game-worn jersey",
+        consilium: "Name",
+      },
+      {
+        key: "authentication",
+        label: "Authentication (JSA/PSA-DNA/Beckett) + cert #",
+        placeholder: "e.g. JSA-8842",
+        consilium: "Serial Number",
+      },
+    ],
+  },
+  "Memorabilia & Autographs": {
+    fields: [
+      {
+        key: "itemName",
+        label: "Signer / Item name",
+        placeholder: "e.g. Michael Jordan signed photo",
+        consilium: "Name",
+      },
+      {
+        key: "authentication",
+        label: "Authentication (JSA/PSA-DNA/Beckett) + cert #",
+        placeholder: "e.g. PSA-DNA 112233",
+        consilium: "Serial Number",
+      },
+    ],
+  },
+};
+
+// Generic spec for any category without a dedicated one.
+export const GENERIC_SPEC: CategorySpec = {
+  fields: [
+    { key: "brand", label: "Brand / Type", placeholder: "e.g. brand or maker", consilium: "Brand of Artist" },
+    { key: "name", label: "Name / Description", placeholder: "e.g. what it is", consilium: "Name" },
+    { key: "serialNumber", label: "Serial / Model", placeholder: "if available", consilium: "Serial Number" },
+  ],
+};
+
+export function specForCategory(category: string): CategorySpec {
+  return CATEGORY_SPECS[category] || GENERIC_SPEC;
+}
+
 // A single scheduled/blanket item on the intake.
 export interface IntakeItem {
   category: string;
+  // Legacy/simple fields (kept for backward compat + as a fallback summary).
   brandType: string;
   description: string;
-  // For Trading Cards this holds "PSA 10", "BGS 9.5", etc.
-  // For everything else this is a serial number / model reference.
+  // For Trading Cards this holds "PSA 10"; else a serial/model reference.
   serialOrGrade: string;
   value: number; // USD
+  // Category-specific captured values keyed by CategoryFieldDef.key.
+  fields?: Record<string, string>;
+  // Cameras / musical instruments: client confirmed <$15K income from use.
+  useIncomeConfirmed?: boolean;
 }
 
 export interface IntakeClient {
@@ -156,7 +351,9 @@ export function deriveFlags(intake: QuoteIntake): DerivedFlags {
       ? APPRAISAL_WATCH_THRESHOLD
       : APPRAISAL_ITEM_THRESHOLD;
     if (val > appraisalThreshold) {
-      needsAppraisalItems.push(`${itemLabel(item, idx)} ($${val.toLocaleString()})`);
+      needsAppraisalItems.push(
+        `${itemShortLabel(item) || itemLabel(item, idx)} ($${val.toLocaleString()})`
+      );
     }
 
     if (intake.coverageType === "blanket" && val > BLANKET_PER_ITEM_LIMIT) {
@@ -212,10 +409,67 @@ function esc(s: unknown): string {
     .replace(/>/g, "&gt;");
 }
 
-function serialLabel(category: string): string {
-  return category.toLowerCase().includes("trading card")
-    ? "Grading Co. + Grade"
-    : "Serial / Model";
+// Build Consilium-mapped rows for one item, using the category spec.
+// Each row is [displayLabel, value] where displayLabel makes the target
+// Consilium box explicit when the mapping is non-obvious, e.g.
+//   "Serial Number (Medium)"  or  "Brand of Artist (Type + Material)".
+// Groups (multiple fields → one Consilium box) are joined into one row.
+export function consiliumItemRows(item: IntakeItem): [string, string][] {
+  const spec = specForCategory(item.category);
+  const f = item.fields || {};
+  const rows: [string, string][] = [];
+  const seenGroups = new Set<string>();
+
+  for (const def of spec.fields) {
+    // Grouped fields (e.g. Jewelry type+material) collapse into one row.
+    if (def.group) {
+      if (seenGroups.has(def.group)) continue;
+      seenGroups.add(def.group);
+      const groupDefs = spec.fields.filter((d) => d.group === def.group);
+      const values = groupDefs.map((d) => (f[d.key] || "").trim()).filter(Boolean);
+      const srcLabels = groupDefs.map((d) => d.label).join(" + ");
+      rows.push([`${def.consilium} (${srcLabels})`, values.join(" / ")]);
+      continue;
+    }
+
+    const value = (f[def.key] || "").trim();
+    // Decide whether to annotate the Consilium box with the source meaning.
+    // Obvious 1:1 (label already names the Consilium box) → show plain label.
+    const labelNamesBox =
+      def.label.toLowerCase().replace(/[^a-z]/g, "") ===
+        def.consilium.toLowerCase().replace(/[^a-z]/g, "") ||
+      def.label.toLowerCase().includes(def.consilium.toLowerCase());
+    const display = labelNamesBox
+      ? def.consilium
+      : `${def.consilium} (${def.label})`;
+    rows.push([display, value]);
+  }
+
+  // Always include Current Value last.
+  rows.push(["Current Value", usd(item.value)]);
+
+  // Income confirmation for cameras / instruments.
+  const spec2 = specForCategory(item.category);
+  if (spec2.incomeConfirmation) {
+    rows.push([
+      "Income-from-use confirmation",
+      item.useIncomeConfirmed
+        ? "Confirmed: does NOT earn > $15K from use of the item(s)"
+        : "NOT confirmed — follow up before quoting",
+    ]);
+  }
+  return rows;
+}
+
+// A short human label for an item (used in flag messages / summaries).
+export function itemShortLabel(item: IntakeItem): string {
+  const f = item.fields || {};
+  const spec = specForCategory(item.category);
+  const nameDef = spec.fields.find((d) => d.consilium === "Name");
+  const brandDef = spec.fields.find((d) => d.consilium === "Brand of Artist");
+  const name = (nameDef && f[nameDef.key]) || item.description || "";
+  const brand = (brandDef && f[brandDef.key]) || item.brandType || "";
+  return [item.category, brand, name].filter(Boolean).join(" · ");
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -295,10 +549,9 @@ export function formatConsiliumEmailHTML(
         }</td></tr>
         ${rows([
           ["Category", esc(item.category)],
-          ["Brand / Type", esc(item.brandType)],
-          ["Description", esc(item.description)],
-          [serialLabel(item.category), esc(item.serialOrGrade)],
-          ["Current Value", usd(item.value)],
+          ...consiliumItemRows(item).map(
+            ([k, v]) => [k, esc(v)] as [string, string]
+          ),
         ]).replace(/padding:5px 14px 5px 0/g, "padding:5px 14px 5px 12px")}
       </table>`
       )
@@ -394,10 +647,9 @@ export function formatConsiliumText(
   (intake.items || []).forEach((item, i) => {
     L.push(`  Item ${i + 1}:`);
     L.push(`    Category: ${item.category}`);
-    L.push(`    Brand/Type: ${item.brandType || "—"}`);
-    L.push(`    Description: ${item.description || "—"}`);
-    L.push(`    ${serialLabel(item.category)}: ${item.serialOrGrade || "—"}`);
-    L.push(`    Current Value: ${usd(item.value)}`);
+    for (const [k, v] of consiliumItemRows(item)) {
+      L.push(`    ${k}: ${v || "—"}`);
+    }
   });
   L.push("");
   L.push("4) UNDERWRITING FLAGS");
