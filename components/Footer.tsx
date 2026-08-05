@@ -6,10 +6,12 @@ export default function Footer() {
     <footer className="footer">
       <div className="wrap foot-in">
         <div className="foot-links">
-          <Link href="/#who">Who we cover</Link>
-          <Link href="/#coverage">Coverage</Link>
-          <Link href="/#how">How it works</Link>
-          <Link href="/#faq">FAQ</Link>
+          <Link href="/coverage">Coverage</Link>
+          <Link href="/coverage/whats-covered">What&apos;s covered</Link>
+          <Link href="/coverage/trading-card-insurance">Trading card insurance</Link>
+          <Link href="/coverage/collectibles-memorabilia-insurance">Memorabilia insurance</Link>
+          <Link href="/coverage/vs-homeowners">vs. Homeowners</Link>
+          <Link href="/coverage/benefits">Coverage benefits</Link>
           <Link href="/#quote">Get a quote</Link>
           <a href="tel:8009330710">(800) 933-0710</a>
           <a href="mailto:support@tcg-insurance.com">support@tcg-insurance.com</a>
