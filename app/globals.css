@@ -257,7 +257,15 @@ h1 { font-size: clamp(2.5rem, 5.2vw, 4.1rem); font-weight: 800; margin-bottom: 2
 .note-info { background: rgba(138, 166, 255, 0.08); border-color: rgba(138, 166, 255, 0.3); color: #C6D2FF; }
 .note-soft { background: rgba(127, 240, 212, 0.06); border-color: rgba(127, 240, 212, 0.25); color: #A9EEDC; }
 .note-warn { background: rgba(232, 193, 90, 0.08); border-color: rgba(232, 193, 90, 0.35); color: #F0D48A; }
+.note-decline { background: rgba(255, 107, 129, 0.09); border-color: rgba(255, 107, 129, 0.4); color: #FF9BB0; }
 .note.item-note { margin-top: 4px; }
+
+/* Yes/No income question */
+.income-yesno { border: 1px solid rgba(232, 193, 90, 0.35); background: rgba(232, 193, 90, 0.06); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; }
+.income-yesno legend { font-size: 0.86rem; color: var(--text); font-weight: 600; padding: 0 4px; }
+.income-yesno legend small { color: var(--muted); font-weight: 400; }
+.income-yesno label { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; color: var(--text); }
+.income-yesno input[type="radio"] { accent-color: #8AA6FF; }
 
 /* Item cards */
 .item-card { border: 1px solid var(--line); border-radius: 16px; padding: 22px; background: var(--panel-2); display: grid; gap: 16px; }

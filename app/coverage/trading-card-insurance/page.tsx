@@ -105,9 +105,10 @@ export default function TradingCardInsurance() {
           <p>
             For most cards no appraisal is required. Individual items valued above roughly
             $25,000 will generally need an appraisal or a bill of sale dated within the last
-            three years. Very large card or memorabilia totals (over $250,000, or over
+            three years. Very large card or memorabilia totals (over $200,000, or over
             $100,000 in California and Florida) may trigger a brief underwriting review — our
-            intake form flags this for you automatically as you build your list.
+            intake form flags this for you automatically as you build your list. Coins,
+            stamps, and currency must be graded to be scheduled.
           </p>
 
           <CoverageCTA heading="Get your cards covered the right way" />

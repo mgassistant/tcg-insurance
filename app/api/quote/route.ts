@@ -5,6 +5,7 @@ import {
   formatConsiliumEmailHTML,
   formatConsiliumText,
   specForCategory,
+  requiresGrade,
   usd,
   type QuoteIntake,
   type IntakeItem,
@@ -110,12 +111,27 @@ async function handleV2(body: Record<string, unknown>) {
   if (!client.email.includes("@") || !client.email.includes(".")) missing.push("email");
   if (items.length === 0) missing.push("at least one item");
   if (items.some((it) => !(it.value > 0))) missing.push("a value for each item");
-  // Cameras / musical instruments require the <$15K-income-from-use confirmation.
-  const needsIncomeConfirm = items.some(
-    (it) => specForCategory(it.category).incomeConfirmation && !it.useIncomeConfirmed
-  );
-  if (needsIncomeConfirm)
-    missing.push("income-from-use confirmation for cameras/instruments");
+  // Cameras / instruments require the income Yes/No to be answered.
+  if (
+    items.some(
+      (it) =>
+        specForCategory(it.category).incomeConfirmation &&
+        it.earnsOver15k === undefined
+    )
+  )
+    missing.push("the >$15K income-from-use question for cameras/instruments");
+  // Cards / memorabilia / collectibles require storage details.
+  if (
+    items.some(
+      (it) => specForCategory(it.category).requiresStorage && !(it.storage || "").trim()
+    )
+  )
+    missing.push("storage details (when/how stored) for cards/memorabilia");
+  // Numismatics (coins/stamps/currency) require a grade on every item.
+  if (
+    items.some((it) => requiresGrade(it.category) && !((it.fields?.grade || "").trim()))
+  )
+    missing.push("a grade for each coin/stamp/currency item");
 
   if (missing.length > 0) {
     return NextResponse.json(
@@ -166,6 +182,9 @@ async function handleV2(body: Record<string, unknown>) {
           needsAppraisal: flags.needsAppraisal,
           mayNeedUnderwriting: flags.mayNeedUnderwriting,
           blanketPerItemExceeded: flags.blanketPerItemExceeded,
+          creditEligible: flags.creditEligible,
+          eligibilityIssues: flags.eligibilityIssues,
+          hasDecline: flags.eligibilityIssues.some((e) => e.severity === "decline"),
           client,
           items,
           blanketTotalItems: intake.blanketTotalItems,
@@ -183,7 +202,10 @@ async function handleV2(body: Record<string, unknown>) {
   }
 
   // 2) Send the Consilium-ordered email (core deliverable).
-  const flagTag = flags.mayNeedUnderwriting
+  const hasDecline = flags.eligibilityIssues.some((e) => e.severity === "decline");
+  const flagTag = hasDecline
+    ? " [ELIGIBILITY]"
+    : flags.mayNeedUnderwriting
     ? " [UW review]"
     : flags.needsAppraisal
     ? " [appraisal]"

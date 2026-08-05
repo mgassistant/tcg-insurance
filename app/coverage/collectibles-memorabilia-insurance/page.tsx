@@ -95,7 +95,7 @@ export default function MemorabiliaInsurance() {
           <h2>Scheduling higher-value pieces</h2>
           <p>
             Individual items above roughly $25,000 generally need an appraisal or a recent
-            bill of sale (within three years). Large memorabilia totals — over $250,000, or
+            bill of sale (within three years). Large memorabilia totals — over $200,000, or
             over $100,000 in California and Florida — may trigger a short underwriting
             review. Our{" "}
             <Link className="inline-link" href="/#quote">

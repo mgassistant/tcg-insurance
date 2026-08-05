@@ -4,15 +4,17 @@ import { useState, useEffect, useMemo } from "react";
 import {
   ITEM_CATEGORIES,
   GRADING_COMPANIES,
-  APPRAISAL_ITEM_THRESHOLD,
-  APPRAISAL_WATCH_THRESHOLD,
   BLANKET_PER_ITEM_LIMIT,
   NEWLY_ACQUIRED_PCT,
   NEWLY_ACQUIRED_DAYS,
   reviewThresholdForCategory,
+  appraisalThresholdForCategory,
   specForCategory,
+  requiresGrade,
+  screenEligibility,
   usd,
   type CoverageType,
+  type IntakeItem,
 } from "@/lib/intake";
 
 // ---- Local form shapes (strings while editing; coerced on submit) ----
@@ -25,7 +27,10 @@ type FormItem = {
   // Trading Cards convenience: grading company chosen via dropdown, combined
   // with the "grade" field on submit into the spec's gradeAuth field.
   gradingCo: string;
-  useIncomeConfirmed: boolean; // cameras / instruments
+  // Cameras / instruments: does client earn > $15K/yr from use? (Yes/No)
+  earnsOver15k: "" | "yes" | "no";
+  // Cards / memorabilia / collectibles: when & how stored.
+  storage: string;
   value: string;
 };
 
@@ -51,7 +56,8 @@ function newItem(category = "Trading Cards"): FormItem {
     description: "",
     fields: {},
     gradingCo: "PSA",
-    useIncomeConfirmed: false,
+    earnsOver15k: "",
+    storage: "",
     value: "",
   };
 }
@@ -110,13 +116,10 @@ export default function QuoteForm() {
 
   const appraisalItems = useMemo(
     () =>
-      items.filter((it) => {
-        const v = parseFloat(it.value) || 0;
-        const th = it.category.toLowerCase().includes("watch")
-          ? APPRAISAL_WATCH_THRESHOLD
-          : APPRAISAL_ITEM_THRESHOLD;
-        return v > th;
-      }),
+      items.filter(
+        (it) =>
+          (parseFloat(it.value) || 0) > appraisalThresholdForCategory(it.category)
+      ),
     [items]
   );
 
@@ -144,6 +147,43 @@ export default function QuoteForm() {
       coverageType === "blanket" &&
       items.some((it) => (parseFloat(it.value) || 0) > BLANKET_PER_ITEM_LIMIT),
     [coverageType, items]
+  );
+
+  // Live eligibility screening (declines / not-accepted).
+  const toIntakeItems = (): IntakeItem[] =>
+    items.map((it) => ({
+      category: it.category,
+      brandType: "",
+      description: it.description,
+      serialOrGrade: "",
+      value: parseFloat(it.value) || 0,
+      fields: it.fields,
+      earnsOver15k:
+        it.earnsOver15k === "" ? undefined : it.earnsOver15k === "yes",
+      storage: it.storage,
+    }));
+
+  const eligibilityIssues = useMemo(
+    () =>
+      screenEligibility({
+        client: {
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          dob: "",
+          street: "",
+          city: "",
+          state: client.state,
+          zip: "",
+          occupation: "",
+          social: "",
+        },
+        coverageType,
+        items: toIntakeItems(),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, client.state, coverageType]
   );
 
   // ---- Item helpers ----
@@ -177,10 +217,17 @@ export default function QuoteForm() {
     if (s === 2) {
       if (items.length === 0) return "Add at least one item.";
       for (const it of items) {
+        const spec = specForCategory(it.category);
         if (!it.category) return "Every item needs a category.";
         if (!(parseFloat(it.value) > 0)) return "Every item needs a current value.";
-        if (specForCategory(it.category).incomeConfirmation && !it.useIncomeConfirmed) {
-          return "Please confirm the <$15K income-from-use statement for cameras/instruments.";
+        if (spec.incomeConfirmation && it.earnsOver15k === "") {
+          return "Please answer the >$15K income-from-use question for cameras/instruments.";
+        }
+        if (spec.requiresStorage && !it.storage.trim()) {
+          return "Please tell us when & how the cards/memorabilia are stored.";
+        }
+        if (requiresGrade(it.category) && !(it.fields.grade || "").trim()) {
+          return "Coins, stamps & currency must be graded — please add a grade.";
         }
       }
     }
@@ -246,7 +293,9 @@ export default function QuoteForm() {
         serialOrGrade,
         value: parseFloat(it.value) || 0,
         fields,
-        useIncomeConfirmed: it.useIncomeConfirmed,
+        earnsOver15k:
+          it.earnsOver15k === "" ? undefined : it.earnsOver15k === "yes",
+        storage: spec.requiresStorage ? it.storage.trim() : undefined,
       };
     });
 
@@ -459,9 +508,12 @@ export default function QuoteForm() {
               id="social"
               value={client.social}
               onChange={(e) => setClient({ ...client, social: e.target.value })}
-              placeholder="linkedin.com/in/…  (optional)"
+              placeholder="linkedin.com/in/…  (preferred when available)"
             />
-            <p className="fine">Optional — a public profile can speed underwriting.</p>
+            <p className="fine">
+              LinkedIn preferred when available. Occupation &amp; LinkedIn matter for
+              credit-eligible quotes (collections over $200K).
+            </p>
           </div>
         </div>
       )}
@@ -507,8 +559,15 @@ export default function QuoteForm() {
             <div className="blanket-fields">
               <div className="note note-info">
                 Blanket coverage is manually underwritten. Tell us the totals below, then
-                on the next step list your <b>10 most valuable items</b> so WAX can review
-                them.
+                on the next step list your <b>10 most valuable items</b> and how they&apos;re
+                stored so WAX can review them.
+              </div>
+              <div className="note note-soft">
+                <b>Note:</b> Jewelry &amp; watches blanket requires <b>$1M+ in scheduled
+                items first</b>, then a {usd(BLANKET_PER_ITEM_LIMIT)} per-item blanket
+                limit. Other collectibles (trading cards, wine, etc.) are available from
+                the first dollar with the same {usd(BLANKET_PER_ITEM_LIMIT)} per-item
+                limit.
               </div>
               <div className="f-row">
                 <div className="field">
@@ -558,9 +617,7 @@ export default function QuoteForm() {
             const isCard = it.category.toLowerCase().includes("trading card");
             const spec = specForCategory(it.category);
             const v = parseFloat(it.value) || 0;
-            const th = it.category.toLowerCase().includes("watch")
-              ? APPRAISAL_WATCH_THRESHOLD
-              : APPRAISAL_ITEM_THRESHOLD;
+            const th = appraisalThresholdForCategory(it.category);
             const needsAppraisal = v > th;
             return (
               <div className="item-card" key={it.id}>
@@ -640,6 +697,18 @@ export default function QuoteForm() {
                   );
                 })}
 
+                {/* Storage question — cards / memorabilia / collectibles */}
+                {spec.requiresStorage && (
+                  <div className="field">
+                    <label>When &amp; how are they stored?</label>
+                    <input
+                      value={it.storage}
+                      onChange={(e) => updateItem(it.id, { storage: e.target.value })}
+                      placeholder="e.g. graded slabs in a home safe; sealed in a climate-controlled closet"
+                    />
+                  </div>
+                )}
+
                 {/* Optional free-text note for any category */}
                 <div className="field">
                   <label>Notes (optional)</label>
@@ -661,21 +730,39 @@ export default function QuoteForm() {
                   />
                 </div>
 
-                {/* Cameras / musical instruments: required income confirmation */}
+                {/* Cameras / instruments: required Yes/No income-from-use */}
                 {spec.incomeConfirmation && (
-                  <label className="doc-check income-check">
-                    <input
-                      type="checkbox"
-                      checked={it.useIncomeConfirmed}
-                      onChange={(e) =>
-                        updateItem(it.id, { useIncomeConfirmed: e.target.checked })
-                      }
-                    />
-                    <span>
-                      I confirm I do <b>not</b> earn more than $15,000 from the use of
-                      this item. <small>(Required for cameras &amp; instruments.)</small>
-                    </span>
-                  </label>
+                  <fieldset className="income-yesno">
+                    <legend>
+                      Do you earn more than $15,000/yr from the use of this item?{" "}
+                      <small>(Required for cameras &amp; instruments.)</small>
+                    </legend>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`earn-${it.id}`}
+                        checked={it.earnsOver15k === "no"}
+                        onChange={() => updateItem(it.id, { earnsOver15k: "no" })}
+                      />
+                      No — personal use
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`earn-${it.id}`}
+                        checked={it.earnsOver15k === "yes"}
+                        onChange={() => updateItem(it.id, { earnsOver15k: "yes" })}
+                      />
+                      Yes
+                    </label>
+                    {it.earnsOver15k === "yes" && (
+                      <div className="note note-decline">
+                        Earning more than $15K/yr from use makes this a <b>commercial</b>{" "}
+                        exposure, which WAX declines. Contact us about a commercial option —
+                        we can&apos;t quote it under a personal collectibles policy.
+                      </div>
+                    )}
+                  </fieldset>
                 )}
 
                 {needsAppraisal && (
@@ -684,6 +771,21 @@ export default function QuoteForm() {
                     years). You can note it below or provide it later.
                   </div>
                 )}
+
+                {/* Per-item eligibility notices (declines / not-accepted) */}
+                {eligibilityIssues
+                  .filter((e) => e.itemIndex === idx)
+                  .map((e, k) => (
+                    <div
+                      key={k}
+                      className={`note ${
+                        e.severity === "decline" ? "note-decline" : "note-warn"
+                      } item-note`}
+                    >
+                      {e.severity === "decline" ? "WAX may not cover this — " : ""}
+                      {e.message}
+                    </div>
+                  ))}
               </div>
             );
           })}
@@ -732,6 +834,13 @@ export default function QuoteForm() {
             <div className="note note-warn">
               One or more items exceed the {usd(BLANKET_PER_ITEM_LIMIT)} blanket per-item
               limit — those may need to be scheduled individually.
+            </div>
+          )}
+          {eligibilityIssues.some((e) => e.severity === "decline") && (
+            <div className="note note-decline">
+              <b>Some items may not be eligible for WAX cover.</b> You can still submit —
+              we&apos;ll review and contact you about options (including commercial or
+              specialty markets where applicable).
             </div>
           )}
         </div>

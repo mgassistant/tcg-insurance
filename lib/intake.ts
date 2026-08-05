@@ -575,6 +575,22 @@ export function screenEligibility(intake: QuoteIntake): EligibilityIssue[] {
   return issues;
 }
 
+// ---- Blanket eligibility (Guide #7) ----
+// Jewelry/Watches blanket requires $1M+ in scheduled items first; other
+// collectibles (incl. cards, wine) available from first dollar. Per-item
+// blanket limit $50K in all cases. Returns an informational note or null.
+export function blanketNoteForIntake(intake: QuoteIntake): string | null {
+  if (intake.coverageType !== "blanket") return null;
+  const hasJewelryWatch = (intake.items || []).some((it) => {
+    const cls = classForCategory(it.category);
+    return cls === "jewelry" || cls === "watches";
+  });
+  if (hasJewelryWatch) {
+    return "Blanket coverage for jewelry/watches requires $1M+ in scheduled items first, then a $50K per-item blanket limit. We'll confirm your scheduled total.";
+  }
+  return "Blanket coverage for collectibles is available from the first dollar with a $50K per-item limit. Provide your total item count, storage details, and your 10 most valuable items.";
+}
+
 // ---- Formatting helpers ----
 export function usd(n: number | undefined | null): string {
   const v = Number(n) || 0;
@@ -862,6 +878,10 @@ export function formatConsiliumText(
     L.push(`  - Manual underwriting review: ${flags.underwritingReasons.join("; ")}`);
   if (flags.blanketPerItemExceeded)
     L.push(`  - Blanket per-item limit ($50,000) exceeded on one or more items.`);
+  if (flags.creditEligible)
+    L.push(
+      `  - Credit-eligible quote (class total > $200K): occupation & LinkedIn matter for underwriting.`
+    );
   if (intake.hasDocumentation)
     L.push(
       `  - Client can provide appraisal/receipt on request${
@@ -872,8 +892,19 @@ export function formatConsiliumText(
     !flags.needsAppraisal &&
     !flags.mayNeedUnderwriting &&
     !flags.blanketPerItemExceeded &&
+    !flags.creditEligible &&
     !intake.hasDocumentation
   )
     L.push("  - None flagged.");
+
+  if ((flags.eligibilityIssues || []).length) {
+    L.push("");
+    L.push("!! ELIGIBILITY SCREENING");
+    for (const e of flags.eligibilityIssues) {
+      L.push(
+        `  - [${e.severity === "decline" ? "DECLINE" : "CHECK"}] ${e.category}: ${e.message}`
+      );
+    }
+  }
   return L.join("\n");
 }
