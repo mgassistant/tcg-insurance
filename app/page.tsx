@@ -144,7 +144,10 @@ export default function HomePage() {
             <h2>Protection that speaks the hobby</h2>
             <p>
               Coverage may be available across the risks that actually threaten a
-              collection — not the generic list a standard policy gives you.
+              collection — not the generic list a standard policy gives you.{" "}
+              <Link className="holo-text" href="/coverage/vs-homeowners" style={{ fontWeight: 600 }}>
+                See why homeowners falls short →
+              </Link>
             </p>
           </div>
           <div className="cov-grid">
@@ -195,16 +198,16 @@ export default function HomePage() {
               <span className="n">STEP 01</span>
               <h3>Tell us what you&apos;ve got</h3>
               <p>
-                Share your collection type and rough value. Takes about two minutes — no
-                card-by-card list needed to start.
+                Add your items — graded slabs, sealed product, memorabilia, watches — with
+                values. Our form flags appraisal and underwriting needs as you go.
               </p>
             </div>
             <div className="step">
               <span className="n">STEP 02</span>
-              <h3>Review your quote</h3>
+              <h3>We prepare your WAX quote</h3>
               <p>
-                A licensed agent confirms eligibility and walks you through the coverage
-                that may be available and what it costs.
+                A licensed agent confirms eligibility and prepares your quote through WAX.
+                No premium is quoted online — you&apos;ll hear from a real person.
               </p>
             </div>
             <div className="step">
@@ -224,16 +227,25 @@ export default function HomePage() {
         <div className="wrap">
           <div className="quote-shell">
             <div className="quote-side">
-              <h2>Get a free quote</h2>
+              <h2>Request your quote</h2>
               <p>
-                Tell us about your collection and a licensed agent will follow up with the
-                coverage that may be available for you.
+                Tell us about yourself and the items you want covered. A licensed agent
+                prepares your WAX quote and follows up — no premium is quoted online, and
+                there&apos;s no obligation.
               </p>
               <div className="assure">
                 <div>
                   <span className="i">✓</span>
                   <span>
-                    <b>No obligation.</b> A quote is just a quote — no pressure to buy.
+                    <b>Agreed value.</b> Items insured at agreed value — up to 150% on a
+                    covered total loss.
+                  </span>
+                </div>
+                <div>
+                  <span className="i">✓</span>
+                  <span>
+                    <b>$0 deductible, worldwide.</b> Covered at home, at shows, and in
+                    transit.
                   </span>
                 </div>
                 <div>
@@ -241,12 +253,6 @@ export default function HomePage() {
                   <span>
                     <b>Hobby-literate agents.</b> People who actually know grading and
                     sealed product.
-                  </span>
-                </div>
-                <div>
-                  <span className="i">✓</span>
-                  <span>
-                    <b>Fast follow-up.</b> Most quotes get a response the same business day.
                   </span>
                 </div>
               </div>
