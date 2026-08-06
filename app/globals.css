@@ -401,3 +401,46 @@ table.cmp .no { color: #FF9BB0; }
   .f-row { grid-template-columns: 1fr; }
   .hero { padding: 56px 0 48px; }
 }
+
+/* ═══ Dealer / path-select flow ═══ */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+.istep-hint { color: var(--muted, #9aa2c4); font-size: 13px; margin: -6px 0 4px; }
+
+.path-select h3 { margin-bottom: 4px; }
+.path-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+@media (max-width: 640px) { .path-cards { grid-template-columns: 1fr; } }
+.path-card { text-align: left; padding: 22px; border: 1px solid var(--line, #2a2f45); border-radius: 14px; background: rgba(255,255,255,0.02); cursor: pointer; transition: border-color .15s, transform .15s; }
+.path-card:hover { border-color: rgba(138,166,255,0.6); transform: translateY(-2px); }
+.path-emoji { font-size: 30px; }
+.path-title { font-weight: 700; font-size: 17px; margin: 8px 0 4px; }
+.path-desc { font-size: 13px; color: var(--muted, #9aa2c4); line-height: 1.5; }
+
+.dealer-form h4 { margin: 10px 0 2px; font-size: 14px; color: #8AA6FF; }
+.dealer-yn { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
+.dealer-yn-label { font-size: 14px; }
+.dealer-yn-btns { display: flex; gap: 6px; }
+.yn-btn { padding: 6px 16px; border: 1px solid var(--line, #2a2f45); border-radius: 8px; background: transparent; color: inherit; cursor: pointer; font-size: 13px; }
+.yn-btn.on { background: #8AA6FF; color: #0C0D18; border-color: #8AA6FF; font-weight: 600; }
+
+.dealer-loc { border: 1px solid var(--line, #2a2f45); border-radius: 12px; padding: 16px; margin-bottom: 14px; display: grid; gap: 12px; }
+.dealer-loc-head { display: flex; justify-content: space-between; align-items: center; }
+.dealer-security { border-left: 2px solid #8AA6FF; padding-left: 14px; display: grid; gap: 10px; }
+.dealer-toggle { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.dealer-toggle input { margin-top: 3px; }
+.link-danger { background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 13px; }
+
+.ship-table { display: grid; gap: 6px; }
+.ship-row { display: grid; grid-template-columns: 1fr 110px 90px; gap: 8px; align-items: center; }
+.ship-label { font-size: 12px; color: var(--muted, #9aa2c4); }
+@media (max-width: 640px) { .ship-row { grid-template-columns: 1fr; } }
+
+.dealer-checks { border: 1px solid var(--line, #2a2f45); border-radius: 10px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 12px; }
+.dealer-checks legend { font-size: 13px; color: var(--muted, #9aa2c4); padding: 0 6px; }
+.check-inline { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+
+.review-block { border: 1px solid var(--line, #2a2f45); border-radius: 10px; padding: 14px 16px; font-size: 14px; line-height: 1.7; }
+.declaration { margin-top: 16px; display: grid; gap: 14px; }
+.banner.warn { background: rgba(200,150,0,0.12); border: 1px solid rgba(200,150,0,0.4); color: #d9b25a; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
