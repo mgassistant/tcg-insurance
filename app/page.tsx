@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Slab from "@/components/Slab";
 import Faq from "@/components/Faq";
-import QuoteForm from "@/components/QuoteForm";
+import QuoteFlow from "@/components/QuoteFlow";
 
 export default function HomePage() {
   return (
@@ -257,7 +257,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            <QuoteForm />
+            <QuoteFlow />
           </div>
         </div>
       </section>
