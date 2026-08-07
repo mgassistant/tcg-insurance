@@ -11,6 +11,12 @@ import {
   type IntakeItem,
   type CoverageType,
 } from "@/lib/intake";
+import {
+  deriveDealerFlags,
+  formatDealerEmailHTML,
+  formatDealerText,
+  type DealerIntake,
+} from "@/lib/dealer";
 
 const BROKERIQ_URL = process.env.BROKERIQ_URL || "https://www.broker-iq.com/api/leads/inbound";
 const TCG_TENANT = process.env.BROKERIQ_TENANT_ID || "";
@@ -236,6 +242,231 @@ async function handleV2(body: Record<string, unknown>) {
 // ═══════════════════════════════════════════════════════════════════
 // v1 — legacy simple form (kept working for any deep links)
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// v3 — DEALER / SHOP intake
+// ═══════════════════════════════════════════════════════════════════
+function num(v: unknown): number {
+  return Number(v) || 0;
+}
+function str(v: unknown): string {
+  return String(v ?? "").trim();
+}
+function triBool(v: unknown): boolean | null {
+  if (v === true || v === "yes" || v === "YES") return true;
+  if (v === false || v === "no" || v === "NO") return false;
+  return null;
+}
+
+function normalizeDealer(body: Record<string, unknown>): DealerIntake {
+  const b = (body.business || {}) as Record<string, unknown>;
+  const s = (body.stock || {}) as Record<string, unknown>;
+  const lm = (body.limits || {}) as Record<string, unknown>;
+  const h = (body.history || {}) as Record<string, unknown>;
+  const d = (body.declaration || {}) as Record<string, unknown>;
+  const locsIn = Array.isArray(body.locations) ? body.locations : [];
+
+  const shippingLimitsIn = (lm.shippingLimits || {}) as Record<string, unknown>;
+  const shippingLimits: Record<string, { limit: number; pctVolume: number }> = {};
+  for (const [k, v] of Object.entries(shippingLimitsIn)) {
+    const o = (v || {}) as Record<string, unknown>;
+    shippingLimits[k] = { limit: num(o.limit), pctVolume: num(o.pctVolume) };
+  }
+
+  return {
+    business: {
+      insuredName: str(b.insuredName),
+      riskStreet: str(b.riskStreet),
+      riskCity: str(b.riskCity),
+      riskState: str(b.riskState),
+      riskZip: str(b.riskZip),
+      mailingAddress: str(b.mailingAddress),
+      principalName: str(b.principalName),
+      phoneMain: str(b.phoneMain),
+      phoneCell: str(b.phoneCell),
+      email: str(b.email).toLowerCase(),
+      fein: str(b.fein),
+      stateRegistered: str(b.stateRegistered),
+      mainContact: str(b.mainContact),
+      businessType: str(b.businessType),
+      yearsTrading: str(b.yearsTrading),
+      totalRevenueLastYear: num(b.totalRevenueLastYear),
+      employees: str(b.employees),
+    },
+    stock: {
+      splitSports: num(s.splitSports),
+      splitPokemon: num(s.splitPokemon),
+      splitMarvel: num(s.splitMarvel),
+      splitDisney: num(s.splitDisney),
+      splitDC: num(s.splitDC),
+      splitOther: num(s.splitOther),
+      otherDetail: str(s.otherDetail),
+      avgItemValue: num(s.avgItemValue),
+      avgReplacementValue: num(s.avgReplacementValue),
+      maxReplacementValue: num(s.maxReplacementValue),
+      amountInBankVaults: num(s.amountInBankVaults),
+      amountNotInSafe: num(s.amountNotInSafe),
+      outOfSafeHousing: str(s.outOfSafeHousing),
+    },
+    locations: locsIn.map((raw) => {
+      const l = (raw || {}) as Record<string, unknown>;
+      const sec = (l.security || {}) as Record<string, unknown>;
+      return {
+        locationType: str(l.locationType) || "Store",
+        exclusiveControl: triBool(l.exclusiveControl),
+        controlComment: str(l.controlComment),
+        floorsUnit: str(l.floorsUnit),
+        floorsBuilding: str(l.floorsBuilding),
+        construction: str(l.construction),
+        hasRetail: Boolean(l.hasRetail),
+        security: {
+          burglarAlarm: triBool(sec.burglarAlarm),
+          burglarAlarmMakeModel: str(sec.burglarAlarmMakeModel),
+          fireAlarm: triBool(sec.fireAlarm),
+          fireAlarmMakeModel: str(sec.fireAlarmMakeModel),
+          otherFireProtection: str(sec.otherFireProtection),
+          holdUpButtons: triBool(sec.holdUpButtons),
+          cctv: triBool(sec.cctv),
+          securityGuard: triBool(sec.securityGuard),
+          safe: triBool(sec.safe),
+          safeMakeModel: str(sec.safeMakeModel),
+          safeComplete: triBool(sec.safeComplete),
+          vault: triBool(sec.vault),
+          vaultMakeModel: str(sec.vaultMakeModel),
+        },
+        staticLimit: num(l.staticLimit),
+      };
+    }),
+    limits: {
+      bankVaultsLimit: num(lm.bankVaultsLimit),
+      bvPartOfOrAdditional:
+        lm.bvPartOfOrAdditional === "part_of" || lm.bvPartOfOrAdditional === "in_addition"
+          ? (lm.bvPartOfOrAdditional as "part_of" | "in_addition")
+          : "",
+      unnamedLocationsLimit: num(lm.unnamedLocationsLimit),
+      authenticatorsLimit: num(lm.authenticatorsLimit),
+      totalPackages: num(lm.totalPackages),
+      avgValuePerPackage: num(lm.avgValuePerPackage),
+      totalValueShipped: num(lm.totalValueShipped),
+      shippingLimits,
+      otherShippingLabel: str(lm.otherShippingLabel),
+      otherShippingLimit: num(lm.otherShippingLimit),
+      otherShippingPct: num(lm.otherShippingPct),
+      totalEvents: num(lm.totalEvents),
+      avgValuePerEvent: num(lm.avgValuePerEvent),
+      eventsSecureCarrier: num(lm.eventsSecureCarrier),
+      limitConveyedToEvents: num(lm.limitConveyedToEvents),
+      limitAtEvents: num(lm.limitAtEvents),
+      maxSinglePersonEvent: num(lm.maxSinglePersonEvent),
+      avgValuePersonalCarrying: num(lm.avgValuePersonalCarrying),
+      totalPersonalCarryings: num(lm.totalPersonalCarryings),
+      limitPerPersonalCarrying: num(lm.limitPerPersonalCarrying),
+      deductibleStatic: num(lm.deductibleStatic),
+      deductibleShipping: num(lm.deductibleShipping),
+      deductibleOutside: num(lm.deductibleOutside),
+    },
+    history: {
+      coverageStartDate: str(h.coverageStartDate),
+      currentBrokerInsurer: str(h.currentBrokerInsurer),
+      hadLosses: triBool(h.hadLosses),
+      lossDetails: str(h.lossDetails),
+      authenticators: Array.isArray(h.authenticators) ? h.authenticators.map(str) : [],
+      authenticatorsOther: str(h.authenticatorsOther),
+      lossPayees: str(h.lossPayees),
+      ancillary: Array.isArray(h.ancillary) ? h.ancillary.map(str) : [],
+    },
+    declaration: {
+      agreed: Boolean(d.agreed),
+      signatoryName: str(d.signatoryName),
+      date: str(d.date),
+    },
+  };
+}
+
+async function handleV3(body: Record<string, unknown>) {
+  const intake = normalizeDealer(body);
+  const b = intake.business;
+
+  // ---- Server-side validation ----
+  const missing: string[] = [];
+  if (!b.insuredName) missing.push("business name");
+  if (!b.principalName) missing.push("principal name");
+  const phoneDigits = b.phoneMain.replace(/\D/g, "");
+  if (phoneDigits.length < 10) missing.push("main phone");
+  if (!b.email.includes("@") || !b.email.includes(".")) missing.push("email");
+  if (!b.fein) missing.push("FEIN");
+  if (!b.businessType) missing.push("business type");
+  if ((intake.locations || []).length === 0) missing.push("at least one location");
+  if (!intake.declaration.agreed) missing.push("declaration agreement");
+  if (!intake.declaration.signatoryName) missing.push("signatory name");
+
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `Missing or invalid: ${missing.join(", ")}`, missing },
+      { status: 400 }
+    );
+  }
+
+  const flags = deriveDealerFlags(intake);
+  const textIntake = formatDealerText(intake, flags);
+
+  // 1) Push to BrokerIQ.
+  let brokerOk = false;
+  let brokerResult: Record<string, unknown> = {};
+  try {
+    const res = await fetch(BROKERIQ_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: b.insuredName,
+        email: b.email,
+        phone: phoneDigits,
+        message: textIntake,
+        source: SOURCE,
+        tenant_id: TCG_TENANT,
+        lead_type: "new",
+        state: b.riskState || "CA",
+        raw: {
+          version: 3,
+          origin: SOURCE,
+          kind: "dealer",
+          business: intake.business,
+          stock: intake.stock,
+          locations: intake.locations,
+          limits: intake.limits,
+          history: intake.history,
+          declaration: intake.declaration,
+          flags,
+          dealerText: textIntake,
+        },
+      }),
+    });
+    brokerResult = await res.json().catch(() => ({}));
+    brokerOk = res.ok;
+  } catch (err) {
+    console.error("BrokerIQ submission failed:", err);
+  }
+
+  // 2) Email the Consilium-ordered dealer intake.
+  const flagTag = flags.highMaxReplacement
+    ? " [UW review]"
+    : flags.splitOff || flags.outOfSafeNoSecurity
+    ? " [check]"
+    : "";
+  const emailOk = await sendEmail(
+    `New WAX DEALER intake — ${b.insuredName} · ${usd(intake.stock.maxReplacementValue)}${flagTag}`,
+    formatDealerEmailHTML(intake, flags, SOURCE)
+  );
+
+  if (!brokerOk && !emailOk) {
+    return NextResponse.json(
+      { success: false, error: "Could not submit your request. Please call us." },
+      { status: 502 }
+    );
+  }
+
+  return NextResponse.json({ success: true, kind: "dealer", ...brokerResult });
+}
+
 async function handleV1(body: Record<string, unknown>) {
   const cleanName = String(body.name || "").trim();
   const cleanPhone = String(body.phone || "").replace(/\D/g, "");
@@ -322,7 +553,11 @@ export async function POST(req: NextRequest) {
     const spam = spamCheck(body, ip);
     if (spam) return spam;
 
-    // Route by shape: v2 rich intake has an `items` array + `client`.
+    // Route by shape: v3 dealer has a `business` object (or version 3);
+    // v2 rich intake has an `items` array + `client`; else legacy v1.
+    if (body.version === 3 || body.kind === "dealer" || body.business) {
+      return await handleV3(body);
+    }
     if (Array.isArray(body.items) || body.version === 2) {
       return await handleV2(body);
     }
