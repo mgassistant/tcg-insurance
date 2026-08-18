@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Instrument_Sans, IBM_Plex_Mono } from "next/font/g
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${bricolage.variable} ${instrument.variable} ${plexMono.variable}`}>
+        <GoogleAnalytics />
         <Navigation />
         <main>{children}</main>
         <Footer />
