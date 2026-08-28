@@ -26,6 +26,15 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.tcg-insurance.com"),
+  icons: {
+    icon: [
+      { url: "https://www.tcg-insurance.com/favicon.ico", sizes: "any" },
+      { url: "https://www.tcg-insurance.com/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    shortcut: "https://www.tcg-insurance.com/favicon.ico",
+    apple: "https://www.tcg-insurance.com/apple-icon.png",
+  },
   title: "TCG Insurance — Insurance for Trading Card Collections",
   description:
     "Specialized insurance for TCG collectors, game stores, and dealers. Coverage may be available for graded slabs, sealed product, store inventory, and in-transit shipments. Get a free quote in minutes.",
