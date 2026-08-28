@@ -16,7 +16,10 @@ export default function Footer() {
           <a href="tel:8009330710">(800) 933-0710</a>
           <a href="mailto:support@tcg-insurance.com">support@tcg-insurance.com</a>
         </div>
-        <span className="mono">© {year} TCG INSURANCE · COVERAGE MAY BE AVAILABLE SUBJECT TO ELIGIBILITY</span>
+        <div className="foot-legal">
+          <span className="mono">TCG-Insurance.com is powered by FasTrak Insurance Solutions Inc · License #0L73418</span>
+          <span className="mono">© {year} TCG INSURANCE · COVERAGE MAY BE AVAILABLE SUBJECT TO ELIGIBILITY</span>
+        </div>
       </div>
     </footer>
   );
