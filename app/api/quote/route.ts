@@ -19,7 +19,11 @@ import {
 } from "@/lib/dealer";
 
 const BROKERIQ_URL = process.env.BROKERIQ_URL || "https://www.broker-iq.com/api/leads/inbound";
-const TCG_TENANT = process.env.BROKERIQ_TENANT_ID || "";
+// BetterHelp Insurance broker-iq tenant (agency behind tcg-insurance.com).
+// Hardcoded fallback so leads always reach broker-iq for auto-contact even if
+// the env var is unset in prod; env var can still override if a different
+// tenant is ever needed.
+const TCG_TENANT = process.env.BROKERIQ_TENANT_ID || "a48b4bbb-0a1a-4cef-bb21-56c7bf94f64e";
 const SOURCE = "tcg-insurance.com";
 
 // Email notification (Resend) — optional, degrades gracefully if unset.
