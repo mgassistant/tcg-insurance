@@ -356,9 +356,9 @@ export default function QuoteForm() {
         <div className="big">🛡️</div>
         <h3>Quote request received.</h3>
         <p>
-          Thanks — a licensed agent will prepare your WAX quote and reach out shortly to
+          Thanks — a licensed BetterHelp Insurance agent will prepare your quote and reach out shortly to
           confirm details. This is a request, not a bound policy; coverage is subject to
-          underwriting and WAX approval.
+          underwriting and carrier approval.
         </p>
       </div>
     );
@@ -560,7 +560,7 @@ export default function QuoteForm() {
               <div className="note note-info">
                 Blanket coverage is manually underwritten. Tell us the totals below, then
                 on the next step list your <b>10 most valuable items</b> and how they&apos;re
-                stored so WAX can review them.
+                stored so the carrier can review them.
               </div>
               <div className="note note-soft">
                 <b>Note:</b> Jewelry &amp; watches blanket requires <b>$1M+ in scheduled
@@ -758,7 +758,7 @@ export default function QuoteForm() {
                     {it.earnsOver15k === "yes" && (
                       <div className="note note-decline">
                         Earning more than $15K/yr from use makes this a <b>commercial</b>{" "}
-                        exposure, which WAX declines. Contact us about a commercial option —
+                        exposure, which the carrier declines. Contact us about a commercial option —
                         we can&apos;t quote it under a personal collectibles policy.
                       </div>
                     )}
@@ -782,7 +782,7 @@ export default function QuoteForm() {
                         e.severity === "decline" ? "note-decline" : "note-warn"
                       } item-note`}
                     >
-                      {e.severity === "decline" ? "WAX may not cover this — " : ""}
+                      {e.severity === "decline" ? "This may not be covered — " : ""}
                       {e.message}
                     </div>
                   ))}
@@ -838,7 +838,7 @@ export default function QuoteForm() {
           )}
           {eligibilityIssues.some((e) => e.severity === "decline") && (
             <div className="note note-decline">
-              <b>Some items may not be eligible for WAX cover.</b> You can still submit —
+              <b>Some items may not be eligible for coverage.</b> You can still submit —
               we&apos;ll review and contact you about options (including commercial or
               specialty markets where applicable).
             </div>
@@ -928,7 +928,7 @@ export default function QuoteForm() {
           <p className="fine">
             By submitting, you agree to be contacted about coverage for your collection.
             This is a quote request — not a bound policy. Coverage is subject to
-            eligibility, underwriting, and WAX approval. No premium is quoted here.
+            eligibility, underwriting, and carrier approval. No premium is quoted here.
           </p>
         </div>
       )}

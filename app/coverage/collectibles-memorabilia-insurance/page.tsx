@@ -5,7 +5,7 @@ import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
 export const metadata: Metadata = {
   title: "Collectibles & Memorabilia Insurance — Autographs, Sports & More | TCG Insurance",
   description:
-    "Insure sports memorabilia, autographs, game-worn gear, and signed collectibles at agreed value through WAX. $0 deductible, worldwide coverage, and mysterious-disappearance protection.",
+    "Insure sports memorabilia, autographs, game-worn gear, and signed collectibles at agreed value through BetterHelp Insurance. $0 deductible, worldwide coverage, and mysterious-disappearance protection.",
   keywords:
     "memorabilia insurance, sports memorabilia insurance, autograph insurance, signed collectibles insurance, game worn insurance, collectibles insurance",
   alternates: {
@@ -36,7 +36,7 @@ export default function MemorabiliaInsurance() {
           </h1>
           <p className="lede">
             Signed jerseys, game-worn gear, autographed photos, and authenticated
-            collectibles insured at agreed value through WAX — with a $0 deductible and
+            collectibles insured at agreed value through BetterHelp Insurance — with a $0 deductible and
             worldwide protection a homeowners policy won&apos;t match.
           </p>
           <div className="hero-ctas">
@@ -112,7 +112,7 @@ export default function MemorabiliaInsurance() {
             </Link>{" "}
             ·{" "}
             <Link className="inline-link" href="/coverage/vs-homeowners">
-              WAX vs. Homeowners
+              Specialty vs. Homeowners
             </Link>
           </p>
           <CoverageDisclaimer />

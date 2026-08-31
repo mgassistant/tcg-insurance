@@ -17,7 +17,7 @@ export default function Footer() {
           <a href="mailto:support@tcg-insurance.com">support@tcg-insurance.com</a>
         </div>
         <div className="foot-legal">
-          <span className="mono">TCG-Insurance.com is powered by FasTrak Insurance Solutions Inc · License #0L73418</span>
+          <span className="mono">TCG-Insurance.com is powered by BetterHelp Insurance · License #0L73418</span>
           <span className="mono">© {year} TCG INSURANCE · COVERAGE MAY BE AVAILABLE SUBJECT TO ELIGIBILITY</span>
         </div>
       </div>

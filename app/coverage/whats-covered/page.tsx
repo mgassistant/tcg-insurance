@@ -4,14 +4,14 @@ import { ITEM_CATEGORIES } from "@/lib/intake";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
 
 export const metadata: Metadata = {
-  title: "What WAX Covers (and Doesn't) — Collectibles Insurance | TCG Insurance",
+  title: "What's Covered (and What Isn't) — Collectibles Insurance | TCG Insurance",
   description:
-    "See every collectibles category WAX can insure — trading cards, sports memorabilia, autographs, watches, jewelry, fine art, comics, coins — plus what's not eligible (iced-out jewelry, modern firearms, commercial-use items).",
+    "See every collectibles category we can insure through BetterHelp Insurance's specialty carriers — trading cards, sports memorabilia, autographs, watches, jewelry, fine art, comics, coins — plus what's not eligible (iced-out jewelry, modern firearms, commercial-use items).",
   alternates: { canonical: "https://tcg-insurance.com/coverage/whats-covered" },
   openGraph: {
     title: "What's Covered — Collectibles Insurance Categories",
     description:
-      "Every collectibles category WAX insures, with trading cards and memorabilia front and center.",
+      "Every collectibles category we insure, with trading cards and memorabilia front and center.",
     url: "https://tcg-insurance.com/coverage/whats-covered",
     type: "article",
   },
@@ -35,10 +35,11 @@ export default function WhatsCovered() {
             Coverage · What&apos;s covered
           </span>
           <h1>
-            What <span className="holo-text">WAX insures</span>.
+            What <span className="holo-text">we insure</span>.
           </h1>
           <p className="lede">
-            WAX is a specialty carrier built for valuables and collectibles. If you collect
+            BetterHelp Insurance places coverage through specialty carriers built for valuables
+            and collectibles. If you collect
             it, there&apos;s a good chance it can be scheduled or blanket-insured — with
             trading cards and memorabilia squarely in the wheelhouse.
           </p>
@@ -50,7 +51,7 @@ export default function WhatsCovered() {
           <h2>Categories we can insure</h2>
           <p>
             Below is the full category list. Highlighted chips are where TCG Insurance
-            specializes — but every category can be quoted through WAX.
+            specializes — but every category can be quoted through our specialty carriers.
           </p>
           <div className="cat-chips">
             {ITEM_CATEGORIES.filter((c) => c !== "Other").map((c) => (
@@ -86,10 +87,10 @@ export default function WhatsCovered() {
             </li>
           </ul>
 
-          <h2>What WAX doesn&apos;t cover</h2>
+          <h2>What&apos;s typically not covered</h2>
           <p>
-            WAX is a specialty <em>collectibles</em> carrier, not a general property
-            policy. To set expectations before you request a quote, these are typically{" "}
+            Our specialty collectibles carriers cover valuables, not general property.
+            To set expectations before you request a quote, these are typically{" "}
             <strong>not eligible</strong>:
           </p>
           <ul>

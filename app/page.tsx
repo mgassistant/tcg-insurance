@@ -204,10 +204,10 @@ export default function HomePage() {
             </div>
             <div className="step">
               <span className="n">STEP 02</span>
-              <h3>We prepare your WAX quote</h3>
+              <h3>We prepare your quote</h3>
               <p>
-                A licensed agent confirms eligibility and prepares your quote through WAX.
-                No premium is quoted online — you&apos;ll hear from a real person.
+                A licensed BetterHelp Insurance agent confirms eligibility and prepares your quote
+                through our specialty collectibles carriers. No premium is quoted online — you&apos;ll hear from a real person.
               </p>
             </div>
             <div className="step">
@@ -229,8 +229,8 @@ export default function HomePage() {
             <div className="quote-side">
               <h2>Request your quote</h2>
               <p>
-                Tell us about yourself and the items you want covered. A licensed agent
-                prepares your WAX quote and follows up — no premium is quoted online, and
+                Tell us about yourself and the items you want covered. A licensed BetterHelp Insurance agent
+                prepares your quote and follows up — no premium is quoted online, and
                 there&apos;s no obligation.
               </p>
               <div className="assure">

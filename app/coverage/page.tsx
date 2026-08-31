@@ -5,7 +5,7 @@ import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
 export const metadata: Metadata = {
   title: "Collectibles Insurance Coverage | TCG Insurance",
   description:
-    "Explore specialized collectibles insurance through WAX: agreed value up to 150%, $0 deductible, worldwide and transit protection, scheduled or blanket coverage for trading cards, memorabilia, watches, and more.",
+    "Explore specialized collectibles insurance through BetterHelp Insurance: agreed value up to 150%, $0 deductible, worldwide and transit protection, scheduled or blanket coverage for trading cards, memorabilia, watches, and more.",
   alternates: { canonical: "https://tcg-insurance.com/coverage" },
   openGraph: {
     title: "Collectibles Insurance Coverage | TCG Insurance",
@@ -20,11 +20,11 @@ const PAGES = [
   {
     href: "/coverage/whats-covered",
     title: "What's Covered",
-    desc: "The full list of WAX collectibles categories — trading cards and memorabilia front and center.",
+    desc: "The full list of collectibles categories — trading cards and memorabilia front and center.",
   },
   {
     href: "/coverage/vs-homeowners",
-    title: "WAX vs. Homeowners Insurance",
+    title: "Specialty vs. Homeowners Insurance",
     desc: "A side-by-side comparison of specialty collectibles coverage against a standard homeowners policy.",
   },
   {
@@ -59,7 +59,7 @@ export default function CoverageHub() {
             afterthoughts.
           </h1>
           <p className="lede">
-            Through our appointment with WAX Insurance, coverage may be available for
+            Through BetterHelp Insurance and our specialty collectibles carriers, coverage may be available for
             trading cards, memorabilia, watches, art, and more — with agreed value, a $0
             deductible, and worldwide protection a homeowners policy simply doesn&apos;t
             offer.

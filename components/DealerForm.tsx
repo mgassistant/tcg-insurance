@@ -375,9 +375,9 @@ export default function DealerForm({ onBack }: { onBack?: () => void }) {
         <div className="big">🛡️</div>
         <h3>Dealer application received.</h3>
         <p>
-          Thanks — a licensed agent will prepare your WAX dealer quote and reach out
+          Thanks — a licensed BetterHelp Insurance agent will prepare your dealer quote and reach out
           shortly. This is a request, not a bound policy; coverage is subject to
-          underwriting and WAX approval.
+          underwriting and carrier approval.
         </p>
       </div>
     );

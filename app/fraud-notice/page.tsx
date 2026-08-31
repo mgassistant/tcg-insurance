@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Applicant Fraud Notice | TCG Insurance",
   description:
-    "State-by-state applicant fraud notices for WAX Insurance trading card dealer and collector applications.",
+    "State-by-state applicant fraud notices for trading card dealer and collector insurance applications submitted through BetterHelp Insurance.",
 };
 
 const NOTICES: { state: string; text: string }[] = [
@@ -103,7 +103,7 @@ export default function FraudNoticePage() {
       <h1>Applicant Fraud Notice</h1>
       <p>
         These notices apply to applications for insurance submitted through
-        tcg-insurance.com on behalf of WAX Insurance. Please review the notice for your
+        tcg-insurance.com by BetterHelp Insurance and its appointed carriers. Please review the notice for your
         state before signing the declaration.
       </p>
       <div style={{ marginTop: 32 }}>

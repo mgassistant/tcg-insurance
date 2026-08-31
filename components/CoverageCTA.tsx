@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function CoverageCTA({
   heading = "Ready to protect your collection?",
-  sub = "Build a Consilium-ready quote in a few minutes. No premium quoted online — a licensed agent prepares your WAX quote.",
+  sub = "Build your quote in a few minutes. No premium quoted online — a licensed BetterHelp Insurance agent prepares your quote through our specialty collectibles carriers.",
 }: {
   heading?: string;
   sub?: string;
@@ -26,10 +26,11 @@ export default function CoverageCTA({
 export function CoverageDisclaimer() {
   return (
     <p className="disclaimer">
-      Coverage is subject to policy terms, underwriting, and WAX approval; availability and
+      Coverage is subject to policy terms, underwriting, and carrier approval; availability and
       thresholds vary by state. Nothing on this page is a bound policy or a binding quote.
-      Insurance is offered through a licensed agency appointed with WAX Insurance. Figures
-      and limits described reflect general WAX program guidelines and may change.
+      Insurance is offered through BetterHelp Insurance, a licensed agency appointed with specialty
+      collectibles carriers including WAX. Figures and limits described reflect general program
+      guidelines and may change.
     </p>
   );
 }

@@ -34,7 +34,7 @@ export default function TradingCardInsurance() {
           </h1>
           <p className="lede">
             Graded slabs, sealed product, and vintage singles insured at agreed value —
-            through our appointment with WAX Insurance. Coverage that understands the
+            through BetterHelp Insurance and our specialty collectibles carriers. Coverage that understands the
             difference between a PSA 9 and a PSA 10, and prices your collection like the
             asset it is.
           </p>
@@ -72,7 +72,7 @@ export default function TradingCardInsurance() {
 
           <h2>Agreed value for graded cards</h2>
           <p>
-            Card values move fast. With agreed value, you and WAX set the insured value up
+            Card values move fast. With agreed value, you and the carrier set the insured value up
             front, and a covered total loss can pay up to 150% of that scheduled amount —
             so a card that appreciates between renewals isn&apos;t stuck at last year&apos;s
             number. Grading company and grade are recorded on your schedule, because a PSA
