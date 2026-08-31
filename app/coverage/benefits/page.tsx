@@ -5,12 +5,12 @@ import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
 export const metadata: Metadata = {
   title: "Coverage Benefits — Agreed Value, No Deductible, Worldwide | TCG Insurance",
   description:
-    "Understand the core WAX collectibles coverage benefits: agreed value up to 150%, $0 deductible, worldwide protection, transit coverage, and scheduled vs. blanket coverage.",
+    "Understand the core collectibles coverage benefits: agreed value up to 150%, $0 deductible, worldwide protection, transit coverage, and scheduled vs. blanket coverage.",
   alternates: { canonical: "https://tcg-insurance.com/coverage/benefits" },
   openGraph: {
     title: "Coverage Benefits — Agreed Value, No Deductible, Worldwide",
     description:
-      "The core benefits of WAX collectibles coverage explained: agreed value, $0 deductible, worldwide, transit, scheduled vs. blanket.",
+      "The core benefits of specialty collectibles coverage explained: agreed value, $0 deductible, worldwide, transit, scheduled vs. blanket.",
     url: "https://tcg-insurance.com/coverage/benefits",
     type: "article",
   },
@@ -31,7 +31,7 @@ export default function Benefits() {
             worth it.
           </h1>
           <p className="lede">
-            Five things a collectibles policy through WAX does that a homeowners policy
+            Five things a specialty collectibles policy does that a homeowners policy
             usually doesn&apos;t. Jump to any section below.
           </p>
           <nav className="anchor-nav" aria-label="On this page">
@@ -48,8 +48,8 @@ export default function Benefits() {
         <div className="wrap prose">
           <h2 id="agreed-value">Agreed value (up to 150%)</h2>
           <p>
-            With agreed value, you and WAX set your item&apos;s insured value up front —
-            no arguing over depreciation at claim time. On a covered total loss, WAX can pay
+            With agreed value, you and the carrier set your item&apos;s insured value up front —
+            no arguing over depreciation at claim time. On a covered total loss, the carrier can pay
             up to <strong>150% of the scheduled value</strong>, recognizing that
             collectibles appreciate. That&apos;s a fundamentally different promise from the
             actual-cash-value math a homeowners policy uses.
@@ -105,7 +105,7 @@ export default function Benefits() {
           <p className="fine" style={{ marginTop: 16 }}>
             See it in action:{" "}
             <Link className="inline-link" href="/coverage/vs-homeowners">
-              WAX vs. Homeowners
+              Specialty vs. Homeowners
             </Link>{" "}
             ·{" "}
             <Link className="inline-link" href="/coverage/trading-card-insurance">

@@ -3,12 +3,12 @@ import Link from "next/link";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
 
 export const metadata: Metadata = {
-  title: "WAX vs. Homeowners Insurance for Collectibles | TCG Insurance",
+  title: "Specialty vs. Homeowners Insurance for Collectibles | TCG Insurance",
   description:
-    "Homeowners policies cap collectibles and exclude mysterious disappearance. Compare WAX specialty coverage — agreed value up to 150%, $0 deductible, worldwide protection — against a standard homeowners policy.",
+    "Homeowners policies cap collectibles and exclude mysterious disappearance. Compare specialty collectibles coverage — agreed value up to 150%, $0 deductible, worldwide protection — against a standard homeowners policy.",
   alternates: { canonical: "https://tcg-insurance.com/coverage/vs-homeowners" },
   openGraph: {
-    title: "WAX vs. Homeowners Insurance for Collectibles",
+    title: "Specialty vs. Homeowners Insurance for Collectibles",
     description:
       "Why a specialty collectibles policy beats homeowners: agreed value, $0 deductible, worldwide and mysterious-disappearance coverage.",
     url: "https://tcg-insurance.com/coverage/vs-homeowners",
@@ -67,7 +67,7 @@ export default function VsHomeowners() {
         <div className="wrap">
           <span className="eyebrow">
             <span className="dot" />
-            Coverage · WAX vs. Homeowners
+            Coverage · Specialty vs. Homeowners
           </span>
           <h1>
             Why a homeowners policy{" "}
@@ -76,21 +76,21 @@ export default function VsHomeowners() {
           <p className="lede">
             Standard homeowners and renters policies were never designed for a six-figure
             card collection or a signed jersey wall. They cap collectibles, exclude
-            mysterious disappearance, and pay depreciated value. Specialty coverage through
-            WAX is built differently.
+            mysterious disappearance, and pay depreciated value. Specialty collectibles coverage
+            through BetterHelp Insurance is built differently.
           </p>
         </div>
       </header>
 
       <section className="section" style={{ paddingTop: 24 }}>
         <div className="wrap prose">
-          <h2>WAX collectibles coverage vs. a standard homeowners policy</h2>
+          <h2>Specialty collectibles coverage vs. a standard homeowners policy</h2>
           <div className="cmp-wrap">
             <table className="cmp">
               <thead>
                 <tr>
                   <th>Feature</th>
-                  <th>WAX specialty coverage</th>
+                  <th>Specialty collectibles coverage</th>
                   <th>Standard homeowners</th>
                 </tr>
               </thead>
@@ -109,7 +109,7 @@ export default function VsHomeowners() {
           <h2>What &quot;agreed value up to 150%&quot; actually means</h2>
           <p>
             With agreed value, you and the carrier agree on an item&apos;s insured value up
-            front. On a covered total loss, WAX can pay up to 150% of that scheduled
+            front. On a covered total loss, the carrier can pay up to 150% of that scheduled
             value — recognizing that collectibles appreciate, and that a market-moving card
             may be worth more than the number on your schedule. A homeowners policy, by
             contrast, tends to pay depreciated actual cash value, if the item is covered at
@@ -132,7 +132,7 @@ export default function VsHomeowners() {
           <p>
             &quot;Mysterious disappearance&quot; — an item that simply goes missing with no
             explainable cause — is one of the most common collectibles losses and one that
-            homeowners policies routinely exclude. WAX includes it.
+            homeowners policies routinely exclude. Specialty collectibles coverage includes it.
           </p>
 
           <CoverageCTA heading="See what your collection would cost to protect" />
