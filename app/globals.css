@@ -55,9 +55,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .nav-in { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-bricolage); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; }
-.logo-mark { width: 26px; height: 34px; border-radius: 5px; background: var(--holo); position: relative; flex-shrink: 0; }
-.logo-mark::after { content: ""; position: absolute; inset: 3px; border-radius: 3px; background: var(--ink); }
-.logo-mark::before { content: ""; position: absolute; top: 6px; left: 6px; right: 6px; height: 6px; border-radius: 2px; background: var(--gold); z-index: 1; }
+.logo-mark { width: 28px; height: auto; flex-shrink: 0; object-fit: contain; }
 .nav-links { display: flex; gap: 28px; font-size: 0.92rem; color: var(--muted); }
 .nav-links a:hover { color: var(--text); }
 .nav-cta { display: flex; align-items: center; gap: 16px; }

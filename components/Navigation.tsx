@@ -1,11 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
+import tcgShield from "@/public/tcg-shield.png";
 
 export default function Navigation() {
   return (
     <nav className="nav">
       <div className="wrap nav-in">
         <Link className="logo" href="/" aria-label="TCG Insurance home">
-          <span className="logo-mark" aria-hidden="true" />
+          <Image className="logo-mark" src={tcgShield} alt="" width={28} height={31} priority />
           TCG Insurance
         </Link>
         <div className="nav-links">
