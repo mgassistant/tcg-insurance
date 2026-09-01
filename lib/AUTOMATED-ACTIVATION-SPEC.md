@@ -12,6 +12,17 @@ This is NOT auto-underwriting. WAX/Consilium quoting is broker-portal only (no p
 
 ---
 
+## 1b. SCOPE — WHO gets instant purchase (MG 8/31)
+**Instant purchase applies ONLY to personal collector quotes** under the flat-SKU threshold. Everything else stays lead-intake as-is:
+- ✅ **Personal collector, scheduled, under $25K, no decline flags** → instant purchase (automated flow below)
+- ❌ **Personal collector over $25K / needs appraisal / underwriting flags** → lead intake (as-is)
+- ❌ **Dealer / shop (v3 DealerForm)** → lead intake (as-is)
+- ❌ **Blanket / high-value** → lead intake (as-is)
+The intake engine already computes totalValue + flags; branch to instant-purchase only when personal + scheduled + <$25K + zero eligibility/decline issues.
+
+## 1c. AUTO-CONTACT REQUIREMENT (MG 8/31)
+All lead-intake forms must auto-generate auto-contact email + SMS to the client on submission. This is handled by broker-iq.com when the form posts to /api/leads/inbound with a valid tenant_id. Audit in progress to confirm EVERY form reaches broker-iq (see leadform audit). Instant-purchase flow must ALSO confirm the client (payment receipt + activation link) on top of any broker-iq auto-contact.
+
 ## 2. Pricing (fixed SKU — under $25K collections)
 
 | Option | Structure | Customer pays | We net (gross) |
