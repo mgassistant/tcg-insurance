@@ -53,7 +53,13 @@ export default function Slab() {
               <span>EST. 2026</span>
             </div>
             <div className="sc-mid">
-              <div className="shield">🛡️</div>
+              <div className="shield" aria-hidden="true">
+                <svg viewBox="0 0 48 56" width="46" height="54" fill="none">
+                  <path d="M24 2 L44 10 V26 C44 40 35 50 24 54 C13 50 4 40 4 26 V10 Z" fill="#0F3320" stroke="#5D8C3B" stroke-width="2.5"/>
+                  <path d="M24 14 L34 18.5 V27 C34 35 29.5 40.5 24 43 C18.5 40.5 14 35 14 27 V18.5 Z" fill="none" stroke="#A1BC5F" stroke-width="2"/>
+                  <path d="M19 28 L23 32 L30 22" stroke="#A1BC5F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
               <div className="cov">
                 FULLY
                 <br />
