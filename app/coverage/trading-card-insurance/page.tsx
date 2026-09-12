@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
+import JsonLd from "@/components/JsonLd";
+import { serviceSchema, breadcrumbSchema } from "@/lib/schema";
+import { absUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Trading Card Insurance — Graded Slabs & Sealed Product | TCG Insurance",
@@ -21,6 +24,21 @@ export const metadata: Metadata = {
 export default function TradingCardInsurance() {
   return (
     <>
+      <JsonLd
+        data={[
+          serviceSchema({
+            name: "Trading Card Insurance",
+            description:
+              "Agreed-value coverage for PSA/BGS/CGC graded slabs, sealed product, and vintage singles — scheduled or blanket, $0 deductible, worldwide.",
+            url: absUrl("/coverage/trading-card-insurance"),
+          }),
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Coverage", path: "/coverage" },
+            { name: "Trading Card Insurance", path: "/coverage/trading-card-insurance" },
+          ]),
+        ]}
+      />
       <header className="page-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">

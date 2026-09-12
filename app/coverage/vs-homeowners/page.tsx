@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "Specialty vs. Homeowners Insurance for Collectibles | TCG Insurance",
@@ -62,6 +64,13 @@ const ROWS: { feature: string; wax: string; home: string; waxYes?: boolean; home
 export default function VsHomeowners() {
   return (
     <>
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Coverage", path: "/coverage" },
+          { name: "Specialty vs. Homeowners", path: "/coverage/vs-homeowners" },
+        ])}
+      />
       <header className="page-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">

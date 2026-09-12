@@ -15,6 +15,7 @@ export default function Navigation() {
           <Link href="/coverage">Coverage</Link>
           <Link href="/coverage/trading-card-insurance">Trading cards</Link>
           <Link href="/coverage/vs-homeowners">vs. Homeowners</Link>
+          <Link href="/blog">Resources</Link>
           <Link href="/#faq">FAQ</Link>
         </div>
         <div className="nav-cta">

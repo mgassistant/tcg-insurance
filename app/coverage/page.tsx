@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
+import JsonLd from "@/components/JsonLd";
+import { serviceSchema, breadcrumbSchema } from "@/lib/schema";
+import { absUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Collectibles Insurance Coverage | TCG Insurance",
@@ -47,6 +50,20 @@ const PAGES = [
 export default function CoverageHub() {
   return (
     <>
+      <JsonLd
+        data={[
+          serviceSchema({
+            name: "Collectibles Insurance Coverage",
+            description:
+              "Specialized collectibles insurance: agreed value up to 150%, $0 deductible, worldwide and transit protection, scheduled or blanket coverage.",
+            url: absUrl("/coverage"),
+          }),
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Coverage", path: "/coverage" },
+          ]),
+        ]}
+      />
       <header className="page-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">

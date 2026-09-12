@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
+import JsonLd from "@/components/JsonLd";
+import { serviceSchema, breadcrumbSchema } from "@/lib/schema";
+import { absUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Collectibles & Memorabilia Insurance — Autographs, Sports & More | TCG Insurance",
@@ -23,6 +26,21 @@ export const metadata: Metadata = {
 export default function MemorabiliaInsurance() {
   return (
     <>
+      <JsonLd
+        data={[
+          serviceSchema({
+            name: "Collectibles & Memorabilia Insurance",
+            description:
+              "Agreed-value coverage for autographs, sports and entertainment memorabilia, and other collectibles a standard homeowners policy underinsures.",
+            url: absUrl("/coverage/collectibles-memorabilia-insurance"),
+          }),
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Coverage", path: "/coverage" },
+            { name: "Collectibles & Memorabilia Insurance", path: "/coverage/collectibles-memorabilia-insurance" },
+          ]),
+        ]}
+      />
       <header className="page-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">
