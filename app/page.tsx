@@ -2,10 +2,25 @@ import Link from "next/link";
 import Slab from "@/components/Slab";
 import Faq from "@/components/Faq";
 import QuoteFlow from "@/components/QuoteFlow";
+import JsonLd from "@/components/JsonLd";
+import { faqSchema, serviceSchema } from "@/lib/schema";
+import { HOME_FAQ } from "@/lib/homeFaq";
+import { absUrl } from "@/lib/site";
 
 export default function HomePage() {
   return (
     <>
+      <JsonLd
+        data={[
+          faqSchema(HOME_FAQ),
+          serviceSchema({
+            name: "Trading Card & Collectibles Insurance",
+            description:
+              "Specialized insurance for trading card collectors, game stores, and dealers — coverage for graded slabs, sealed product, store inventory, and in-transit shipments.",
+            url: absUrl("/"),
+          }),
+        ]}
+      />
       {/* ---------- Hero ---------- */}
       <header className="hero" id="top">
         <div className="hero-glow" aria-hidden="true" />

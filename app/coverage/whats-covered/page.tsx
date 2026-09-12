@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ITEM_CATEGORIES } from "@/lib/intake";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "What's Covered (and What Isn't) — Collectibles Insurance | TCG Insurance",
@@ -27,6 +29,13 @@ const HOT = new Set([
 export default function WhatsCovered() {
   return (
     <>
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Coverage", path: "/coverage" },
+          { name: "What's Covered", path: "/coverage/whats-covered" },
+        ])}
+      />
       <header className="page-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">

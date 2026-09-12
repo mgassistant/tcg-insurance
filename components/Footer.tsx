@@ -12,6 +12,7 @@ export default function Footer() {
           <Link href="/coverage/collectibles-memorabilia-insurance">Memorabilia insurance</Link>
           <Link href="/coverage/vs-homeowners">vs. Homeowners</Link>
           <Link href="/coverage/benefits">Coverage benefits</Link>
+          <Link href="/blog">Resources</Link>
           <Link href="/#quote">Get a quote</Link>
           <a href="tel:8009330710">(800) 933-0710</a>
           <a href="mailto:support@tcg-insurance.com">support@tcg-insurance.com</a>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CoverageCTA, { CoverageDisclaimer } from "@/components/CoverageCTA";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "Coverage Benefits — Agreed Value, No Deductible, Worldwide | TCG Insurance",
@@ -19,6 +21,13 @@ export const metadata: Metadata = {
 export default function Benefits() {
   return (
     <>
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Coverage", path: "/coverage" },
+          { name: "Coverage Benefits", path: "/coverage/benefits" },
+        ])}
+      />
       <header className="page-hero">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">

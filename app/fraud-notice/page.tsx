@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Applicant Fraud Notice | TCG Insurance",
   description:
     "State-by-state applicant fraud notices for trading card dealer and collector insurance applications submitted through BetterHelp Insurance.",
+  alternates: { canonical: "https://tcg-insurance.com/fraud-notice" },
 };
 
 const NOTICES: { state: string; text: string }[] = [

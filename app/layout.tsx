@@ -4,6 +4,8 @@ import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import JsonLd from "@/components/JsonLd";
+import { organizationSchema, websiteSchema } from "@/lib/schema";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -39,6 +41,7 @@ export const metadata: Metadata = {
   title: "TCG Insurance — Insurance for Trading Card Collections",
   description:
     "Specialized insurance for TCG collectors, game stores, and dealers. Coverage may be available for graded slabs, sealed product, store inventory, and in-transit shipments. Get a free quote in minutes.",
+  alternates: { canonical: "https://tcg-insurance.com" },
   keywords:
     "tcg insurance, trading card insurance, pokemon card insurance, magic the gathering insurance, graded card insurance, collectible card insurance, card shop insurance, sealed product insurance",
   openGraph: {
@@ -59,6 +62,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${bricolage.variable} ${instrument.variable} ${plexMono.variable}`}>
+        <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <GoogleAnalytics />
         <Navigation />
         <main>{children}</main>
