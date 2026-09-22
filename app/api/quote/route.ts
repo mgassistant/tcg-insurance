@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { spamCheck, getIP } from "@/lib/spam-guard";
+import { spamCheck, getIP, isRateLimited } from "@/lib/spam-guard";
 import {
   deriveFlags,
   formatConsiliumEmailHTML,
@@ -548,10 +548,89 @@ async function handleV1(body: Record<string, unknown>) {
   return NextResponse.json({ success: true, ...brokerResult });
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// PARTIAL / ABANDONED lead capture
+// ═══════════════════════════════════════════════════════════════════
+// Fired as soon as a visitor has entered name + email/phone, even if they
+// never reach the final submit. Marked partial:true / lead_status:partial so
+// BrokerIQ can de-dupe: the eventual full submission updates the same record.
+async function handlePartial(body: Record<string, unknown>) {
+  const name = str(body.name);
+  const email = str(body.email).toLowerCase();
+  const phoneDigits = str(body.phone).replace(/\D/g, "");
+
+  // Only accept if there is real contact info: a name plus email or phone.
+  const hasEmail = email.includes("@");
+  const hasPhone = phoneDigits.length >= 10;
+  if (!name || (!hasEmail && !hasPhone)) {
+    return NextResponse.json({ success: true, skipped: "insufficient contact info" });
+  }
+
+  const rawIn = (body.raw && typeof body.raw === "object" ? body.raw : {}) as Record<string, unknown>;
+  const state = str(body.state) || "CA";
+
+  let brokerOk = false;
+  let brokerResult: Record<string, unknown> = {};
+  try {
+    const res = await fetch(BROKERIQ_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        email,
+        phone: phoneDigits,
+        message: str(body.message),
+        source: SOURCE,
+        tenant_id: TCG_TENANT,
+        lead_type: "new",
+        lead_status: "partial",
+        partial: true,
+        state,
+        raw: {
+          ...rawIn,
+          origin: SOURCE,
+          partial: true,
+          lead_status: "partial",
+        },
+      }),
+    });
+    brokerResult = await res.json().catch(() => ({}));
+    brokerOk = res.ok;
+  } catch (err) {
+    console.error("BrokerIQ partial submission failed:", err);
+  }
+
+  // Notify (best-effort). Subject prefixed so partials are distinguishable.
+  await sendEmail(
+    `[PARTIAL LEAD] ${name}${hasEmail ? ` · ${email}` : ""}${hasPhone ? ` · ${phoneDigits}` : ""}`,
+    `<h2>Partial / abandoned lead</h2>
+     <p>A visitor entered contact details but has not completed the form yet.</p>
+     <table cellpadding="6" style="border-collapse:collapse;font-family:sans-serif">
+       <tr><td><b>Name</b></td><td>${name}</td></tr>
+       <tr><td><b>Email</b></td><td>${email || "—"}</td></tr>
+       <tr><td><b>Phone</b></td><td>${phoneDigits || "—"}</td></tr>
+       <tr><td><b>State</b></td><td>${state}</td></tr>
+     </table>
+     <p style="color:#888;font-size:12px">lead_status: partial · Source: ${SOURCE}</p>`
+  );
+
+  return NextResponse.json({ success: true, partial: true, ...brokerResult });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const ip = getIP(req);
+
+    // Partial / abandoned lead capture: fires early (often <3s) and on page
+    // unload, so we skip the speed check but still honor honeypot + rate limit.
+    if (body.partial === true) {
+      if ((body as { _hp?: string })._hp) return NextResponse.json({ success: true });
+      if (isRateLimited(ip)) {
+        return NextResponse.json({ error: "Too many submissions. Try again later." }, { status: 429 });
+      }
+      return await handlePartial(body);
+    }
 
     // Spam check (honeypot / speed / rate-limit / gibberish / disposable)
     const spam = spamCheck(body, ip);

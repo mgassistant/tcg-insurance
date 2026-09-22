@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   ITEM_CATEGORIES,
   GRADING_COMPANIES,
@@ -71,6 +71,12 @@ export default function QuoteForm() {
   const [hp, setHp] = useState(""); // honeypot
   const [ts] = useState(() => Date.now());
 
+  // Partial / abandoned lead capture guards.
+  const partialSentRef = useRef(false);
+  const submittedRef = useRef(false);
+  // Latest client snapshot for unload-time reads (event handlers close over stale state).
+  const clientRef = useRef<Client | null>(null);
+
   const [client, setClient] = useState<Client>({
     firstName: "",
     lastName: "",
@@ -106,6 +112,83 @@ export default function QuoteForm() {
       phone: p.get("phone") || "",
       state: p.get("state") || "",
     }));
+  }, []);
+
+  // Keep a live snapshot for the unload-time beacon (avoids stale closures).
+  useEffect(() => {
+    clientRef.current = client;
+  }, [client]);
+
+  // ---- Partial / abandoned lead capture ----------------------------------
+  // Fire once, as soon as we have real contact info, even if the visitor
+  // abandons before final submit. Marked partial so BrokerIQ de-dupes and the
+  // eventual full submission updates the same record.
+  function buildPartialPayload(c: Client) {
+    const email = c.email.trim().toLowerCase();
+    const phone = c.phone.trim();
+    return {
+      partial: true,
+      lead_status: "partial",
+      name: `${c.firstName} ${c.lastName}`.trim(),
+      email,
+      phone,
+      state: c.state.trim() || "CA",
+      source: "tcg-insurance.com",
+      raw: {
+        partial: true,
+        lead_status: "partial",
+        version: 2,
+        client: c,
+      },
+    };
+  }
+
+  function hasEnoughContact(c: Client): boolean {
+    const hasEmail = c.email.includes("@");
+    const hasPhone = c.phone.replace(/\D/g, "").length >= 10;
+    const hasName = c.firstName.trim().length > 0 || c.lastName.trim().length > 0;
+    return hasName && (hasEmail || hasPhone);
+  }
+
+  // beacon=true uses navigator.sendBeacon for the page-unload path; otherwise a
+  // keepalive fetch for the in-page path.
+  function sendPartialLead(beacon: boolean) {
+    if (partialSentRef.current || submittedRef.current) return;
+    const c = clientRef.current || client;
+    if (!hasEnoughContact(c)) return;
+    partialSentRef.current = true;
+    const endpoint = "/api/quote";
+    const data = buildPartialPayload(c);
+    try {
+      if (beacon && typeof navigator !== "undefined" && navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+        navigator.sendBeacon(endpoint, blob);
+      } else {
+        fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // Never let partial capture break the form.
+    }
+  }
+
+  // TRIGGER 2 (abandon): capture on page leave / tab hide.
+  useEffect(() => {
+    const onPageHide = () => sendPartialLead(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") sendPartialLead(true);
+    };
+    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---- Derived, live totals/flags for reassurance banners ----
@@ -241,6 +324,9 @@ export default function QuoteForm() {
       return;
     }
     setError(null);
+    // TRIGGER 1 (in-page): advancing past the contact step (step 0) means name
+    // + email/phone are validated — capture the partial lead now.
+    if (step === 0) sendPartialLead(false);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
   function back() {
@@ -259,6 +345,8 @@ export default function QuoteForm() {
       }
     }
     setError(null);
+    // Full submit in progress — prevent any partial capture from firing.
+    submittedRef.current = true;
     setStatus("loading");
 
     const payloadItems = items.map((it) => {

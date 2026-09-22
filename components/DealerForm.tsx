@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   BUSINESS_TYPES,
   LOCATION_TYPES,
@@ -98,6 +98,10 @@ export default function DealerForm({ onBack }: { onBack?: () => void }) {
   const [hp, setHp] = useState("");
   const [ts] = useState(() => Date.now());
 
+  // Partial / abandoned lead capture guards.
+  const partialSentRef = useRef(false);
+  const submittedRef = useRef(false);
+
   const [business, setBusiness] = useState({
     insuredName: "",
     riskStreet: "",
@@ -181,6 +185,80 @@ export default function DealerForm({ onBack }: { onBack?: () => void }) {
     date: new Date().toISOString().slice(0, 10),
   });
 
+  // Keep a live snapshot of business contact fields for the unload-time beacon.
+  const businessRef = useRef(business);
+  useEffect(() => {
+    businessRef.current = business;
+  }, [business]);
+
+  // ---- Partial / abandoned lead capture ----------------------------------
+  type BizState = typeof business;
+  function hasEnoughContact(b: BizState): boolean {
+    const hasEmail = b.email.includes("@");
+    const hasPhone = b.phoneMain.replace(/\D/g, "").length >= 10;
+    const hasName = b.insuredName.trim().length > 0 || b.principalName.trim().length > 0;
+    return hasName && (hasEmail || hasPhone);
+  }
+
+  function buildPartialPayload(b: BizState) {
+    return {
+      partial: true,
+      lead_status: "partial",
+      kind: "dealer",
+      name: b.insuredName.trim() || b.principalName.trim(),
+      email: b.email.trim().toLowerCase(),
+      phone: b.phoneMain.trim(),
+      state: b.riskState.trim() || "CA",
+      source: "tcg-insurance.com",
+      raw: {
+        partial: true,
+        lead_status: "partial",
+        version: 3,
+        kind: "dealer",
+        business: b,
+      },
+    };
+  }
+
+  function sendPartialLead(beacon: boolean) {
+    if (partialSentRef.current || submittedRef.current) return;
+    const b = businessRef.current || business;
+    if (!hasEnoughContact(b)) return;
+    partialSentRef.current = true;
+    const endpoint = "/api/quote";
+    const data = buildPartialPayload(b);
+    try {
+      if (beacon && typeof navigator !== "undefined" && navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+        navigator.sendBeacon(endpoint, blob);
+      } else {
+        fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // Never let partial capture break the form.
+    }
+  }
+
+  // TRIGGER 2 (abandon): capture on page leave / tab hide.
+  useEffect(() => {
+    const onPageHide = () => sendPartialLead(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") sendPartialLead(true);
+    };
+    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const splitTotal = useMemo(
     () =>
       [
@@ -255,6 +333,9 @@ export default function DealerForm({ onBack }: { onBack?: () => void }) {
       return;
     }
     setError(null);
+    // TRIGGER 1 (in-page): advancing past the business step (step 0) means name
+    // + email/phone are validated — capture the partial lead now.
+    if (step === 0) sendPartialLead(false);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
   function back() {
@@ -273,6 +354,8 @@ export default function DealerForm({ onBack }: { onBack?: () => void }) {
       }
     }
     setError(null);
+    // Full submit in progress — prevent any partial capture from firing.
+    submittedRef.current = true;
     setStatus("loading");
 
     const shippingLimits: Record<string, { limit: number; pctVolume: number }> = {};
