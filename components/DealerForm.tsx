@@ -350,6 +350,15 @@ export default function DealerForm({ onBack }: { onBack?: () => void }) {
       _ts: ts,
     };
 
+    // Verify email before submit (blocks spam/typos). Fails open.
+    if (business.email && business.email.includes("@")) {
+      try {
+        const vr = await fetch('/api/verify-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: business.email.trim() }) });
+        const vj = await vr.json();
+        if (vj && vj.ok === false) { setError('Please enter a valid email address so we can reach you.'); setStatus("idle"); return; }
+      } catch {}
+    }
+
     try {
       const res = await fetch("/api/quote", {
         method: "POST",
