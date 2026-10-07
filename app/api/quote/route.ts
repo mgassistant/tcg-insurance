@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { spamCheck, getIP, isRateLimited } from "@/lib/spam-guard";
+import { badEmailFlag, verifyEmail } from "@/lib/emailVerification";
 import {
   deriveFlags,
   formatConsiliumEmailHTML,
@@ -39,6 +40,14 @@ const VALUE_LABELS: Record<string, string> = {
   "100k_500k": "$100k – $500k",
   over_500k: "Over $500k",
 };
+
+// Server-side ZeroBounce verdict as `raw` fields for the BrokerIQ lead. Soft-flag
+// only: a bad address tags the lead for review, it is never dropped. Fails open.
+async function emailRaw(email: string, ip = "") {
+  const email_verification = await verifyEmail(email, ip);
+  const flag = badEmailFlag(email_verification);
+  return { email_verification, ...(flag ? { suspected_spam: true, spam_flags: [flag] } : {}) };
+}
 
 async function sendEmail(subject: string, html: string) {
   if (!RESEND_API_KEY || !NOTIFY_TO) return false; // not configured — skip silently
@@ -92,7 +101,7 @@ function normalizeItem(raw: unknown): IntakeItem {
   };
 }
 
-async function handleV2(body: Record<string, unknown>) {
+async function handleV2(body: Record<string, unknown>, ip: string) {
   const rawClient = (body.client || {}) as Record<string, unknown>;
   const client = {
     firstName: String(rawClient.firstName || "").trim(),
@@ -202,6 +211,7 @@ async function handleV2(body: Record<string, unknown>) {
           hasDocumentation: intake.hasDocumentation,
           documentationNote: intake.documentationNote,
           consiliumText: textIntake,
+          ...(await emailRaw(client.email, ip)),
         },
       }),
     });
@@ -386,7 +396,7 @@ function normalizeDealer(body: Record<string, unknown>): DealerIntake {
   };
 }
 
-async function handleV3(body: Record<string, unknown>) {
+async function handleV3(body: Record<string, unknown>, ip: string) {
   const intake = normalizeDealer(body);
   const b = intake.business;
 
@@ -441,6 +451,7 @@ async function handleV3(body: Record<string, unknown>) {
           declaration: intake.declaration,
           flags,
           dealerText: textIntake,
+          ...(await emailRaw(b.email, ip)),
         },
       }),
     });
@@ -471,7 +482,7 @@ async function handleV3(body: Record<string, unknown>) {
   return NextResponse.json({ success: true, kind: "dealer", ...brokerResult });
 }
 
-async function handleV1(body: Record<string, unknown>) {
+async function handleV1(body: Record<string, unknown>, ip: string) {
   const cleanName = String(body.name || "").trim();
   const cleanPhone = String(body.phone || "").replace(/\D/g, "");
   const cleanEmail = String(body.email || "").trim().toLowerCase();
@@ -517,6 +528,7 @@ async function handleV1(body: Record<string, unknown>) {
           collectionValue: lead.collectionValue,
           state: lead.state,
           origin: SOURCE,
+          ...(await emailRaw(lead.email, ip)),
         },
       }),
     });
@@ -554,7 +566,7 @@ async function handleV1(body: Record<string, unknown>) {
 // Fired as soon as a visitor has entered name + email/phone, even if they
 // never reach the final submit. Marked partial:true / lead_status:partial so
 // BrokerIQ can de-dupe: the eventual full submission updates the same record.
-async function handlePartial(body: Record<string, unknown>) {
+async function handlePartial(body: Record<string, unknown>, ip: string) {
   const name = str(body.name);
   const email = str(body.email).toLowerCase();
   const phoneDigits = str(body.phone).replace(/\D/g, "");
@@ -591,6 +603,7 @@ async function handlePartial(body: Record<string, unknown>) {
           origin: SOURCE,
           partial: true,
           lead_status: "partial",
+          ...(await emailRaw(email, ip)),
         },
       }),
     });
@@ -740,6 +753,7 @@ async function handleShow(body: Record<string, unknown>) {
           show_lead_id: lead.id,
           stateFromZip: zipState || null,
           ...lead,
+          ...(await emailRaw(hasEmail ? lead.email : "")),
         },
       }),
     });
@@ -806,7 +820,7 @@ export async function POST(req: NextRequest) {
       if (isRateLimited(ip)) {
         return NextResponse.json({ error: "Too many submissions. Try again later." }, { status: 429 });
       }
-      return await handlePartial(body);
+      return await handlePartial(body, ip);
     }
 
     // Spam check (honeypot / speed / rate-limit / gibberish / disposable)
@@ -816,12 +830,12 @@ export async function POST(req: NextRequest) {
     // Route by shape: v3 dealer has a `business` object (or version 3);
     // v2 rich intake has an `items` array + `client`; else legacy v1.
     if (body.version === 3 || body.kind === "dealer" || body.business) {
-      return await handleV3(body);
+      return await handleV3(body, ip);
     }
     if (Array.isArray(body.items) || body.version === 2) {
-      return await handleV2(body);
+      return await handleV2(body, ip);
     }
-    return await handleV1(body);
+    return await handleV1(body, ip);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
