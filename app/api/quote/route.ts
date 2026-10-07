@@ -617,10 +617,187 @@ async function handlePartial(body: Record<string, unknown>) {
   return NextResponse.json({ success: true, partial: true, ...brokerResult });
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// SHOW — trade-show / convention leads from the offline iPad app (/show)
+// ═══════════════════════════════════════════════════════════════════
+// The iPad app stores leads on the device and uploads them here when it gets
+// signal, so many leads can arrive at once from one IP. They go to the SAME
+// BrokerIQ inbound endpoint, tenant and source as the website forms. A shared
+// key (SHOW_INTAKE_KEY) replaces the per-IP rate limit used for public forms.
+const SHOW_INTAKE_KEY = process.env.SHOW_INTAKE_KEY || "";
+
+// ZIP prefix (first 3 digits) → state, so show leads carry the right state.
+const ZIP3_RANGES: [number, number, string][] = [
+  [5, 5, "NY"], [6, 7, "PR"], [8, 8, "VI"], [9, 9, "PR"], [10, 27, "MA"], [28, 29, "RI"],
+  [30, 38, "NH"], [39, 49, "ME"], [50, 54, "VT"], [55, 55, "MA"], [56, 59, "VT"],
+  [60, 69, "CT"], [70, 89, "NJ"], [100, 149, "NY"], [150, 196, "PA"], [197, 199, "DE"],
+  [200, 200, "DC"], [201, 201, "VA"], [202, 205, "DC"], [206, 219, "MD"], [220, 246, "VA"],
+  [247, 268, "WV"], [270, 289, "NC"], [290, 299, "SC"], [300, 319, "GA"], [320, 349, "FL"],
+  [350, 369, "AL"], [370, 385, "TN"], [386, 397, "MS"], [398, 399, "GA"], [400, 427, "KY"],
+  [430, 459, "OH"], [460, 479, "IN"], [480, 499, "MI"], [500, 528, "IA"], [530, 549, "WI"],
+  [550, 567, "MN"], [570, 577, "SD"], [580, 588, "ND"], [590, 599, "MT"], [600, 629, "IL"],
+  [630, 658, "MO"], [660, 679, "KS"], [680, 693, "NE"], [700, 714, "LA"], [716, 729, "AR"],
+  [730, 749, "OK"], [750, 799, "TX"], [800, 816, "CO"], [820, 831, "WY"], [832, 838, "ID"],
+  [840, 847, "UT"], [850, 865, "AZ"], [870, 884, "NM"], [885, 885, "TX"], [889, 898, "NV"],
+  [900, 961, "CA"], [967, 968, "HI"], [969, 969, "GU"], [970, 979, "OR"], [980, 994, "WA"],
+  [995, 999, "AK"],
+];
+function stateFromZip(zip: string): string {
+  if (!/^\d{5}$/.test(zip)) return "";
+  const p = Number(zip.slice(0, 3));
+  const hit = ZIP3_RANGES.find(([lo, hi]) => p >= lo && p <= hi);
+  return hit ? hit[2] : "";
+}
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function strList(v: unknown): string[] {
+  return Array.isArray(v) ? v.map(str).filter(Boolean).slice(0, 20) : [];
+}
+
+async function handleShow(body: Record<string, unknown>) {
+  const l = (body.lead && typeof body.lead === "object" ? body.lead : {}) as Record<string, unknown>;
+  const lead = {
+    id: str(l.id).slice(0, 64),
+    createdAt: str(l.createdAt).slice(0, 40),
+    event: str(l.event).slice(0, 120),
+    staff: str(l.staff).slice(0, 120),
+    device: str(l.device).slice(0, 60),
+    type: str(l.type).slice(0, 40) || "Personal collector",
+    businessName: str(l.businessName).slice(0, 160),
+    games: strList(l.games),
+    items: strList(l.items),
+    channels: strList(l.channels),
+    valueRange: str(l.valueRange).slice(0, 40),
+    insured: str(l.insured).slice(0, 60),
+    firstName: str(l.firstName).slice(0, 80),
+    lastName: str(l.lastName).slice(0, 80),
+    phone: str(l.phone).replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""),
+    email: str(l.email).toLowerCase().slice(0, 160),
+    zip: str(l.zip).slice(0, 5),
+    contactPref: str(l.contactPref).slice(0, 20),
+    notes: str(l.notes).slice(0, 600),
+    consent: l.consent === true,
+    consentAt: str(l.consentAt).slice(0, 40),
+    consentText: str(l.consentText).slice(0, 800),
+  };
+
+  const hasPhone = lead.phone.length === 10;
+  const hasEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(lead.email);
+  const missing: string[] = [];
+  if (!lead.firstName) missing.push("first name");
+  if (!lead.lastName) missing.push("last name");
+  if (!hasPhone && !hasEmail) missing.push("a valid phone or email");
+  if (!lead.consent) missing.push("contact consent");
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `Missing or invalid: ${missing.join(", ")}`, missing },
+      { status: 400 }
+    );
+  }
+
+  const fullName = `${lead.firstName} ${lead.lastName}`.trim();
+  const zipState = stateFromZip(lead.zip);
+  const rows: [string, string][] = [
+    ["Event", lead.event],
+    ["Lead type", lead.type],
+    ["Business", lead.businessName],
+    ["Collects / carries", lead.games.join(", ")],
+    ["Wants covered", lead.items.join(", ")],
+    ["Sells via", lead.channels.join(", ")],
+    ["Est. total value", lead.valueRange],
+    ["Insured today", lead.insured],
+    ["Prefers contact by", lead.contactPref],
+    ["ZIP", lead.zip],
+    ["Notes", lead.notes],
+    ["Captured", [lead.createdAt, lead.staff, lead.device].filter(Boolean).join(" · ")],
+    ["Contact consent", `Yes${lead.consentAt ? ` at ${lead.consentAt}` : ""}`],
+  ];
+  const shown = rows.filter(([, v]) => v);
+  const message = ["TRADE SHOW LEAD", ...shown.map(([k, v]) => `${k}: ${v}`)].join("\n");
+
+  let brokerOk = false;
+  let brokerStatus = 0;
+  let brokerResult: Record<string, unknown> = {};
+  try {
+    const res = await fetch(BROKERIQ_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: fullName,
+        email: hasEmail ? lead.email : "",
+        phone: hasPhone ? lead.phone : "",
+        message,
+        source: SOURCE,
+        tenant_id: TCG_TENANT,
+        lead_type: "new",
+        state: zipState || "CA",
+        raw: {
+          version: "show-1",
+          origin: SOURCE,
+          kind: "show",
+          channel: "trade-show-ipad",
+          show_lead_id: lead.id,
+          stateFromZip: zipState || null,
+          ...lead,
+        },
+      }),
+    });
+    brokerResult = await res.json().catch(() => ({}));
+    brokerOk = res.ok;
+    brokerStatus = res.status;
+  } catch (err) {
+    console.error("BrokerIQ show-lead submission failed:", err);
+  }
+
+  // The iPad keeps the lead and retries until this returns success, so only
+  // report success once BrokerIQ has it. A BrokerIQ 4xx will never succeed on
+  // retry, so hand it back as a rejection (the lead stays in the iPad's CSV).
+  if (!brokerOk) {
+    const permanent = brokerStatus >= 400 && brokerStatus < 500 && brokerStatus !== 429 && brokerStatus !== 408;
+    return NextResponse.json(
+      {
+        success: false,
+        error: permanent
+          ? `Broker IQ rejected this lead (${brokerStatus}): ${str(brokerResult.error) || "no reason given"}`
+          : "Broker IQ could not be reached. The lead will be retried.",
+      },
+      { status: permanent ? 400 : 502 }
+    );
+  }
+
+  await sendEmail(
+    `New SHOW lead — ${fullName}${lead.event ? ` · ${lead.event}` : ""}${lead.valueRange ? ` · ${lead.valueRange}` : ""}`,
+    `<h2>Trade show lead</h2>
+     <table cellpadding="6" style="border-collapse:collapse;font-family:sans-serif">
+       <tr><td><b>Name</b></td><td>${esc(fullName)}</td></tr>
+       <tr><td><b>Phone</b></td><td>${hasPhone ? lead.phone : "—"}</td></tr>
+       <tr><td><b>Email</b></td><td>${hasEmail ? esc(lead.email) : "—"}</td></tr>
+       ${shown.map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td>${esc(v)}</td></tr>`).join("")}
+     </table>
+     <p style="color:#888;font-size:12px">Source: ${SOURCE} · trade show iPad</p>`
+  );
+
+
+  return NextResponse.json({ ...brokerResult, success: true, kind: "show" });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const ip = getIP(req);
+
+    // Trade-show iPad leads: authenticated by shared key instead of the
+    // per-IP rate limit (a whole day of leads can sync from one connection).
+    if (body.kind === "show") {
+      if (!SHOW_INTAKE_KEY) {
+        return NextResponse.json({ error: "Show intake is not configured." }, { status: 503 });
+      }
+      if (req.headers.get("x-show-key") !== SHOW_INTAKE_KEY) {
+        return NextResponse.json({ error: "Sync key not accepted." }, { status: 401 });
+      }
+      return await handleShow(body);
+    }
 
     // Partial / abandoned lead capture: fires early (often <3s) and on page
     // unload, so we skip the speed check but still honor honeypot + rate limit.

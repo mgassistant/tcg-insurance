@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TCG Intake">
+<meta name="theme-color" content="#0a2415">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>TCG Insurance — Show Intake</title>
+<style>
+@font-face{font-family:"Bricolage Grotesque";src:url(fonts/bricolage.woff2) format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Instrument Sans";src:url(fonts/instrument.woff2) format("woff2");font-weight:400 700;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(fonts/plexmono.woff2) format("woff2");font-weight:500;font-display:swap}
+:root{
+  --ink:#0a2415; --panel:#0f3320; --panel2:#143e27; --line:rgba(157,179,154,.2); --line2:rgba(157,179,154,.4);
+  --text:#eaf3e9; --muted:#9db39a; --gold:#e8c15a; --green:#5d8c3b; --lime:#a1bc5f; --bad:#ff9bb0;
+  --holo:linear-gradient(115deg,#a1bc5f 0%,#7fb04a 45%,#a1bc5f 80%,#e8c15a 100%);
+  --r:18px; --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Instrument Sans",system-ui,-apple-system,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:18px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+input,textarea{-webkit-user-select:text;user-select:text;font-family:inherit}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.app{min-height:100%;display:grid;grid-template-columns:minmax(300px,38%) 1fr}
+@media (max-width:900px),(orientation:portrait){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+/* brand side */
+.brand{position:relative;padding:44px 40px;display:flex;flex-direction:column;gap:24px;overflow:hidden;
+  background:radial-gradient(90% 70% at 0% 0%,rgba(93,140,59,.22),transparent 60%),radial-gradient(90% 80% at 100% 100%,rgba(232,193,90,.08),transparent 55%),var(--panel2);
+  border-right:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;letter-spacing:-.02em;font-size:24px}
+.logo img{width:38px;height:auto;flex:none}
+.eyebrow{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:100px;padding:7px 14px}
+.eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.brand h1{font-family:var(--display);font-size:clamp(32px,3.9vw,52px);line-height:1.04;margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.brand h1 em{font-style:normal;background:linear-gradient(115deg,#a1bc5f 0%,#7fb04a 40%,#5d8c3b 60%,#a1bc5f 85%,#e8c15a 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p.lead{margin:0;color:var(--muted);font-size:19px;max-width:30em}
+.points{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+.points li{position:relative;padding-left:26px;color:#cfe3c4;font-size:17px}
+.points li::before{content:"✓";position:absolute;left:0;color:var(--lime);font-weight:700}
+.fine{margin-top:auto;color:var(--muted);font-size:12.5px;line-height:1.5}
+.status{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--muted);margin-bottom:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.dot.on{background:var(--lime)}
+@media (max-width:900px),(orientation:portrait){
+  .brand{padding:22px 26px;gap:12px;border-right:0;border-bottom:1px solid var(--line)}
+  .brand h1{font-size:30px}.points,.brand p.lead,.eyebrow{display:none}
+  .fine{margin-top:4px}
+}
+
+/* form side */
+.main{padding:36px clamp(20px,4vw,56px) 12px;display:flex;flex-direction:column;min-width:0}
+.progress{display:flex;gap:8px;margin-bottom:26px}
+.progress i{flex:1;height:5px;border-radius:3px;background:var(--line);transition:background .25s}
+.progress i.on{background:var(--lime)}
+.step{display:none;flex-direction:column;gap:22px;flex:1;animation:in .25s ease}
+.step.on{display:flex}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.step{animation:none}}
+h2{font-family:var(--display);font-size:32px;margin:0;letter-spacing:-.015em;font-weight:700;line-height:1.1}
+.sub{color:var(--muted);margin:-14px 0 0}
+.label{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:0 0 10px}
+.label small{font-family:var(--body);text-transform:none;letter-spacing:0;font-size:13px;color:var(--muted)}
+
+.who{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:620px){.who{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:30px 26px;text-align:left;
+  display:flex;flex-direction:column;gap:10px;min-height:220px;transition:border-color .15s,transform .1s}
+.card:active{transform:scale(.985);border-color:var(--green)}
+.card b{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:-.01em}.card span{color:var(--muted);font-size:17px}
+.card .ico{width:54px;height:54px;border-radius:14px;background:rgba(161,188,95,.12);display:grid;place-items:center;margin-bottom:6px}
+.card .ico svg{width:30px;height:30px;stroke:var(--lime);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card .go{margin-top:auto;color:var(--lime);font-weight:600;font-size:17px}
+
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{background:var(--panel);border:1px solid var(--line2);border-radius:999px;padding:13px 20px;font-size:17px;font-weight:500;min-height:52px}
+.chip.on{background:var(--lime);border-color:var(--lime);color:var(--ink);font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:620px){.grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field label{font-size:14px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+input[type=text],input[type=email],input[type=tel],input[type=password],input[type=url],textarea{
+  width:100%;background:var(--ink);border:1px solid var(--line2);border-radius:12px;color:var(--text);
+  font-size:19px;padding:15px 16px;outline:none;min-height:56px}
+input::placeholder{color:rgba(157,179,154,.5)}
+textarea{min-height:84px;resize:none}
+input:focus,textarea:focus{border-color:var(--lime)}
+.bad input,.bad textarea{border-color:var(--bad)}
+.err{color:var(--bad);font-size:15px;min-height:20px;margin:-8px 0 0}
+.consent{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;text-align:left;width:100%}
+.consent.on{border-color:var(--green);background:rgba(93,140,59,.1)}
+.consent.bad{border-color:var(--bad)}
+.box{flex:none;width:30px;height:30px;border-radius:8px;border:2px solid var(--muted);display:grid;place-items:center;margin-top:1px}
+.consent.on .box{background:var(--lime);border-color:var(--lime)}
+.box svg{width:18px;height:18px;stroke:var(--ink);stroke-width:3;fill:none;opacity:0}
+.consent.on .box svg{opacity:1}
+.consent span{font-size:14.5px;color:#cfe3c4;line-height:1.45}
+.nav{display:flex;gap:14px;margin-top:auto;padding:14px 0 16px;position:sticky;bottom:0;z-index:2;background:linear-gradient(to bottom,transparent,var(--ink) 14px)}
+.btn{border-radius:14px;padding:17px 28px;font-size:19px;font-weight:600;min-height:60px;background:transparent;border:1px solid var(--line2);color:var(--text)}
+.btn.primary{background:var(--holo);border-color:transparent;color:var(--ink);flex:1;box-shadow:0 4px 24px rgba(93,140,59,.25)}
+.btn.primary:active{filter:brightness(1.08)}
+.btn.sm{min-height:48px;padding:11px 18px;font-size:16px}
+.btn.danger{border-color:rgba(255,107,129,.4);color:var(--bad)}
+.btn:disabled{opacity:.5}
+
+.thanks{align-items:center;justify-content:center;text-align:center;gap:18px}
+.thanks .big{width:96px;height:96px;border-radius:50%;background:rgba(161,188,95,.15);border:1px solid rgba(161,188,95,.4);display:grid;place-items:center}
+.thanks .big svg{width:48px;height:48px;stroke:var(--lime);stroke-width:3;fill:none}
+.thanks p{color:#cfe3c4;max-width:26em;margin:0;font-size:20px}
+.thanks small{color:var(--muted);font-family:var(--mono);font-size:13px}
+
+/* overlays */
+.overlay{position:fixed;inset:0;background:rgba(4,16,9,.86);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.overlay.on{display:flex}
+.sheet{background:var(--panel);border:1px solid var(--line2);border-radius:22px;padding:28px;width:min(720px,100%);max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:18px;-webkit-overflow-scrolling:touch}
+.sheet h3{font-family:var(--display);margin:0;font-size:26px;letter-spacing:-.01em}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.stat b{display:block;font-family:var(--display);font-size:32px;font-variant-numeric:tabular-nums}.stat span{font-size:13px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{font-size:14px;color:var(--muted);margin:0}
+.recent{font-size:14.5px;color:#cfe3c4;display:grid;gap:6px;font-variant-numeric:tabular-nums}
+.recent div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+hr{border:0;border-top:1px solid var(--line);width:100%;margin:2px 0}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:var(--text);color:var(--ink);padding:13px 22px;border-radius:999px;font-weight:600;font-size:16px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="brand">
+    <div class="logo" id="logo" aria-label="TCG Insurance">
+      <img src="shield.png" alt="">
+      <span>TCG Insurance</span>
+    </div>
+    <span class="eyebrow"><i></i>TCG Collection Insurance</span>
+    <h1>Your collection is an asset. <em>Insure it like one.</em></h1>
+    <p class="lead">Tell us what you collect and a licensed agent will follow up with a quote after the show.</p>
+    <ul class="points">
+      <li>Graded slabs, raw singles, sealed product and store inventory</li>
+      <li>At home, in transit, at shows and out for grading</li>
+      <li>Takes about a minute. No obligation.</li>
+    </ul>
+    <div class="fine">
+      <div class="status"><span class="dot" id="dot"></span><span id="statusText">Starting…</span></div><br>
+      TCG-Insurance.com is powered by Better Help Insurance Solutions Inc. · National Producer Number 20676907.
+      Coverage may be available subject to eligibility. No premium is quoted here and submitting this form does not bind coverage.
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="progress" id="progress"><i></i><i></i><i></i></div>
+
+    <section class="step on" data-step="0">
+      <h2>Who are we insuring?</h2>
+      <p class="sub">Pick the one that fits. We'll only ask what's relevant.</p>
+      <div class="who">
+        <button class="card" data-type="Personal collector">
+          <div class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="11" height="16" rx="2"/><path d="M9 21h8a2 2 0 0 0 2-2V8"/></svg></div>
+          <b>Personal collector</b><span>Your own cards, slabs and sealed product.</span><span class="go">Start →</span>
+        </button>
+        <button class="card" data-type="Dealer / Shop">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 10h16v10H4zM3 10l2-6h14l2 6M9 20v-6h6v6"/></svg></div>
+          <b>Dealer / Shop</b><span>Stock, shipping, events and storefronts.</span><span class="go">Start →</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="step" data-step="1">
+      <h2 id="s1title">About your collection</h2>
+      <div class="field" id="bizField" hidden><label for="businessName">Business name</label><input type="text" id="businessName" autocomplete="off" autocapitalize="words" spellcheck="false"></div>
+      <div><p class="label"><span id="gamesLabel">What do you collect?</span> <small>(pick any)</small></p><div class="chips" id="games"></div></div>
+      <div><p class="label">What should be covered? <small>(pick any)</small></p><div class="chips" id="items"></div></div>
+      <div id="chanWrap" hidden><p class="label">Where do you sell? <small>(pick any)</small></p><div class="chips" id="channels"></div></div>
+      <div><p class="label">Rough total value</p><div class="chips" id="valueRange"></div></div>
+      <div><p class="label">Is it insured today?</p><div class="chips" id="insured"></div></div>
+      <div class="nav"><button class="btn" data-back>Back</button><button class="btn primary" data-next>Continue</button></div>
+    </section>
+
+    <section class="step" data-step="2">
+      <h2>Where should we send your quote?</h2>
+      <div class="grid">
+        <div class="field" data-f="firstName"><label for="firstName">First name</label><input type="text" id="firstName" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false"></div>
+        <div class="field" data-f="lastName"><label for="lastName">Last name</label><input type="text" id="lastName" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false"></div>
+        <div class="field" data-f="phone"><label for="phone">Mobile phone</label><input type="tel" id="phone" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555"></div>
+        <div class="field" data-f="email"><label for="email">Email</label><input type="email" id="email" inputmode="email" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="you@email.com"></div>
+        <div class="field" data-f="zip"><label for="zip">ZIP code</label><input type="text" id="zip" inputmode="numeric" maxlength="5" autocomplete="off"></div>
+        <div class="field"><label>Best way to reach you</label><div class="chips" id="contactPref"></div></div>
+        <div class="field wide"><label for="notes">Anything we should know? (optional)</label><textarea id="notes" autocomplete="off" maxlength="600"></textarea></div>
+      </div>
+      <button class="consent" id="consent" type="button" role="checkbox" aria-checked="false">
+        <span class="box"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span>
+        <span id="consentText">I agree that TCG-Insurance.com and Better Help Insurance Solutions Inc. may contact me at the phone number and email above about an insurance quote, including by call, text message and email. Message and data rates may apply. Consent is not a condition of purchase.</span>
+      </button>
+      <p class="err" id="err" role="alert"></p>
+      <div class="nav"><button class="btn" data-back>Back</button><button class="btn primary" id="submit">Request my quote</button></div>
+    </section>
+
+    <section class="step thanks" data-step="3">
+      <div class="big"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></div>
+      <h2 id="thanksTitle">You're all set.</h2>
+      <p>A licensed agent will reach out after the show to confirm details and prepare your quote. Questions sooner? Call (800) 933-0710.</p>
+      <button class="btn primary" id="again" style="flex:none;min-width:260px">Done</button>
+      <small id="countdown"></small>
+    </section>
+  </main>
+</div>
+
+<!-- PIN -->
+<div class="overlay" id="pinOv"><div class="sheet" style="width:min(380px,100%)">
+  <h3>Staff PIN</h3>
+  <input type="password" id="pinIn" inputmode="numeric" autocomplete="off" maxlength="8">
+  <div class="row"><button class="btn sm" id="pinCancel">Cancel</button><button class="btn sm primary" id="pinOk">Unlock</button></div>
+</div></div>
+
+<!-- Staff panel -->
+<div class="overlay" id="staffOv"><div class="sheet">
+  <h3 id="staffTitle">Staff panel</h3>
+  <div id="staffData">
+    <div class="stats">
+      <div class="stat"><b id="stTotal">0</b><span>leads on this iPad</span></div>
+      <div class="stat"><b id="stPending">0</b><span>not yet synced or exported</span></div>
+      <div class="stat"><b id="stOffline">–</b><span>offline ready</span></div>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn sm primary" id="exportBtn" style="flex:none">Export CSV</button>
+      <button class="btn sm" id="syncBtn">Sync now</button>
+      <span class="note" id="syncNote"></span>
+    </div>
+    <div class="recent" id="recent" style="margin-top:16px"></div>
+    <hr style="margin-top:18px">
+  </div>
+  <div class="grid">
+    <div class="field"><label for="cfEvent">Event name</label><input type="text" id="cfEvent" autocomplete="off" placeholder="e.g. Collect-A-Con Anaheim"></div>
+    <div class="field"><label for="cfStaff">Booth / staff name</label><input type="text" id="cfStaff" autocomplete="off"></div>
+    <div class="field"><label for="cfPin">Staff PIN (4+ digits)</label><input type="text" id="cfPin" inputmode="numeric" maxlength="8" autocomplete="off"></div>
+    <div class="field"><label for="cfDevice">iPad label</label><input type="text" id="cfDevice" autocomplete="off" placeholder="e.g. iPad 1"></div>
+    <div class="field wide"><label for="cfToken">Sync key (sends leads to Broker IQ)</label><input type="password" id="cfToken" autocomplete="off"></div>
+  </div>
+  <p class="note">Leads are saved on this iPad the moment they're submitted. With the sync key set, they go to Broker IQ automatically whenever there's signal, through the same intake as the website quote form. Export CSV always works as a backup. To open this panel, tap the shield logo five times.</p>
+  <div class="row"><button class="btn sm primary" id="cfSave" style="flex:none">Save</button><button class="btn sm" id="staffClose">Close</button></div>
+  <div id="dangerZone">
+    <hr>
+    <div class="row" style="margin-top:14px">
+      <input type="text" id="delConfirm" placeholder="Type DELETE" autocomplete="off" autocapitalize="characters" style="width:190px;min-height:48px;font-size:16px;padding:10px 14px">
+      <button class="btn sm danger" id="delBtn">Delete all leads from this iPad</button>
+    </div>
+    <p class="note" style="margin-top:8px">Only allowed once every lead has been synced or exported.</p>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const OPTS={
+  games:['Pokémon','Magic: The Gathering','Yu-Gi-Oh!','One Piece','Lorcana','Sports cards','Other'],
+  items:['Graded slabs','Raw singles','Sealed product','Memorabilia','Store inventory'],
+  channels:['Storefront','Shows & conventions','Online sales','Breaks / live selling'],
+  valueRange:['Under $5k','$5k – $25k','$25k – $100k','$100k – $500k','$500k+','Not sure'],
+  insured:['Not insured','Homeowners / renters only','Separate collectibles policy','Not sure'],
+  contactPref:['Call','Text','Email']
+};
+const MULTI=new Set(['games','items','channels']);
+const SK='tcg-intake-settings', MK='tcg-intake-leads-mirror';
+
+/* ---------- settings ---------- */
+function cfg(){try{return JSON.parse(localStorage.getItem(SK)||'{}')}catch{return{}}}
+function setCfg(o){localStorage.setItem(SK,JSON.stringify(o))}
+function uuid(){return (crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)}))}
+
+/* ---------- storage: IndexedDB + localStorage mirror ---------- */
+let dbp;
+function db(){return dbp||(dbp=new Promise((res,rej)=>{const r=indexedDB.open('tcg-intake',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('leads',{keyPath:'id'});
+  r.onsuccess=()=>res(r.result);r.onerror=()=>{dbp=null;rej(r.error)}}))}
+async function idb(mode,fn){const d=await db();return new Promise((res,rej)=>{const tx=d.transaction('leads',mode);const q=fn(tx.objectStore('leads'));
+  tx.oncomplete=()=>res(q&&q.result);tx.onerror=tx.onabort=()=>rej(tx.error)})}
+function mirror(){try{return JSON.parse(localStorage.getItem(MK)||'[]')}catch{return[]}}
+async function allLeads(){
+  let a=[];try{a=await idb('readonly',s=>s.getAll())||[]}catch(e){}
+  const m=new Map();
+  for(const l of [...mirror(),...a]){const p=m.get(l.id);
+    if(!p)m.set(l.id,l);else m.set(l.id,{...p,...l,synced:p.synced||l.synced,syncedAt:p.syncedAt||l.syncedAt,exportedAt:p.exportedAt||l.exportedAt})}
+  return [...m.values()].sort((x,y)=>x.createdAt<y.createdAt?-1:1);
+}
+async function putLead(l){
+  let ok=false;
+  try{await idb('readwrite',s=>s.put(l));ok=true}catch(e){}
+  try{const a=mirror().filter(x=>x.id!==l.id);a.push(l);localStorage.setItem(MK,JSON.stringify(a));ok=true}catch(e){}
+  if(!ok)throw new Error('Could not save to this device');
+}
+async function clearLeads(){try{await idb('readwrite',s=>s.clear())}catch(e){}try{localStorage.removeItem(MK)}catch(e){}}
+const isPending=l=>!l.synced&&!l.exportedAt;
+
+/* ---------- form state ---------- */
+let f, step=0, resetTimer, idleTimer, countTimer;
+function blank(){return{type:'',businessName:'',games:[],items:[],channels:[],valueRange:'',insured:'',contactPref:'',consent:false}}
+function renderChips(){
+  for(const g in OPTS){const el=$('#'+g);el.innerHTML='';
+    OPTS[g].forEach(v=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=v;
+      const on=MULTI.has(g)?f[g].includes(v):f[g]===v;if(on)b.classList.add('on');b.setAttribute('aria-pressed',on);
+      b.onclick=()=>{if(MULTI.has(g)){const i=f[g].indexOf(v);i<0?f[g].push(v):f[g].splice(i,1)}else f[g]=f[g]===v?'':v;renderChips()};
+      el.appendChild(b)})}
+}
+function go(n){
+  step=n;$$('.step').forEach(s=>s.classList.toggle('on',+s.dataset.step===n));
+  $$('#progress i').forEach((b,i)=>b.classList.toggle('on',n===3||i<=n));
+  $('#progress').style.visibility=n===3?'hidden':'visible';
+  document.activeElement&&document.activeElement.blur();window.scrollTo(0,0);$('.main').scrollTop=0;
+  armIdle();
+}
+function resetForm(){
+  clearTimeout(resetTimer);clearInterval(countTimer);
+  f=blank();['businessName','firstName','lastName','phone','email','zip','notes'].forEach(id=>$('#'+id).value='');
+  $('#consent').classList.remove('on','bad');$('#consent').setAttribute('aria-checked','false');
+  $$('.field.bad').forEach(x=>x.classList.remove('bad'));$('#err').textContent='';
+  renderChips();go(0);
+}
+/* privacy: wipe a half-finished form if someone walks away */
+function armIdle(){clearTimeout(idleTimer);if(step===1||step===2)idleTimer=setTimeout(resetForm,120000)}
+['pointerdown','keydown','input'].forEach(ev=>document.addEventListener(ev,armIdle,{passive:true}));
+
+$$('.card').forEach(c=>c.onclick=()=>{
+  f.type=c.dataset.type;const dealer=f.type!=='Personal collector';
+  $('#bizField').hidden=!dealer;$('#chanWrap').hidden=!dealer;if(!dealer){$('#businessName').value='';f.channels=[];renderChips()}
+  $('#s1title').textContent=dealer?'About your business':'About your collection';$('#gamesLabel').textContent=dealer?'What do you carry?':'What do you collect?';go(1)});
+$$('[data-next]').forEach(b=>b.onclick=()=>go(step+1));
+$$('[data-back]').forEach(b=>b.onclick=()=>go(step-1));
+$('#consent').onclick=()=>{f.consent=!f.consent;const c=$('#consent');c.classList.toggle('on',f.consent);c.classList.remove('bad');c.setAttribute('aria-checked',f.consent)};
+$('#phone').addEventListener('input',e=>{let d=e.target.value.replace(/\D/g,'');if(d.length===11&&d[0]==='1')d=d.slice(1);d=d.slice(0,10);
+  e.target.value=d.length>6?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:d.length>3?`(${d.slice(0,3)}) ${d.slice(3)}`:d});
+$('#zip').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,5));
+
+function validate(){
+  const v=id=>$('#'+id).value.trim(), bad=[];let msg='';
+  const digits=v('phone').replace(/\D/g,''), email=v('email');
+  if(!v('firstName'))bad.push('firstName');if(!v('lastName'))bad.push('lastName');
+  if(bad.length)msg='Please add your first and last name.';
+  const pOk=digits.length===10, eOk=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  if(digits&&!pOk){bad.push('phone');msg=msg||'That phone number looks incomplete.'}
+  if(email&&!eOk){bad.push('email');msg=msg||'That email address doesn’t look right.'}
+  if(!digits&&!email){bad.push('phone','email');msg=msg||'Add a phone number or an email so we can reach you.'}
+  if(v('zip').length!==5){bad.push('zip');msg=msg||'Please add your 5-digit ZIP code.'}
+  $$('.field[data-f]').forEach(x=>x.classList.toggle('bad',bad.includes(x.dataset.f)));
+  if(!msg&&!f.consent){$('#consent').classList.add('bad');msg='Please tick the box so we’re allowed to contact you.'}
+  $('#err').textContent=msg;return !msg;
+}
+$('#submit').onclick=async()=>{
+  if(!validate())return;
+  const s=cfg(), v=id=>$('#'+id).value.trim(), now=new Date().toISOString();
+  const lead={id:uuid(),createdAt:now,event:s.event||'',staff:s.staff||'',device:s.device||'',source:'Trade show iPad',
+    type:f.type,businessName:v('businessName'),games:f.games,items:f.items,channels:f.channels,valueRange:f.valueRange,insured:f.insured,
+    firstName:v('firstName'),lastName:v('lastName'),phone:v('phone'),email:v('email').toLowerCase(),zip:v('zip'),
+    contactPref:f.contactPref,notes:v('notes'),consent:true,consentAt:now,consentText:$('#consentText').textContent.trim(),synced:false};
+  $('#submit').disabled=true;
+  try{await putLead(lead)}catch(e){$('#submit').disabled=false;$('#err').textContent='This iPad couldn’t save your entry. Please ask a team member for help.';return}
+  $('#submit').disabled=false;
+  $('#thanksTitle').textContent=`You're all set, ${lead.firstName}.`;
+  go(3);refreshStatus();sync();
+  let n=10;const tick=()=>{$('#countdown').textContent=`Starting over in ${n}s`};tick();
+  clearInterval(countTimer);countTimer=setInterval(()=>{n--;tick();if(n<=0)resetForm()},1000);
+};
+$('#again').onclick=resetForm;
+
+/* ---------- status + sync ---------- */
+async function refreshStatus(){
+  const leads=await allLeads(), pend=leads.filter(isPending).length, on=navigator.onLine;
+  $('#dot').classList.toggle('on',on);
+  $('#statusText').textContent=`${on?'Online':'Offline'} · ${leads.length} saved on this iPad`+(pend?` · ${pend} waiting`:'');
+  $('#stTotal').textContent=leads.length;$('#stPending').textContent=pend;
+  $('#recent').innerHTML='';
+  leads.slice(-5).reverse().forEach(l=>{const d=document.createElement('div');const a=document.createElement('span'),b=document.createElement('span');
+    a.textContent=`${l.firstName} ${l.lastName} · ${l.type}`;
+    b.textContent=new Date(l.createdAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+(l.synced?' · sent to Broker IQ':l.syncError?' · rejected, see CSV':l.exportedAt?' · exported':' · on device');
+    d.append(a,b);$('#recent').appendChild(d)});
+  try{const hit=window.caches&&await caches.match('./index.html');$('#stOffline').textContent=hit?'Yes':'No'}catch{$('#stOffline').textContent='No'}
+}
+const ENDPOINT='/api/quote';
+let syncing=false;
+async function sync(retryRejected){
+  const s=cfg();if(!s.token)return{skipped:true};if(syncing)return{busy:true};if(!navigator.onLine)return{sent:0,rejected:0,err:'No connection'};
+  syncing=true;let sent=0,rejected=0,err='';
+  try{
+    for(const l of (await allLeads()).filter(x=>!x.synced&&(retryRejected||!x.syncError))){
+      const {synced,syncedAt,exportedAt,syncError,...lead}=l, ac=new AbortController(), t=setTimeout(()=>ac.abort(),20000);
+      try{
+        const r=await fetch(ENDPOINT,{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-show-key':s.token},body:JSON.stringify({kind:'show',lead})});
+        const j=await r.json().catch(()=>({}));
+        if(r.ok&&j.success){l.synced=true;delete l.syncError;l.syncedAt=new Date().toISOString();await putLead(l);sent++}
+        else if(r.status===400){l.syncError=j.error||'Rejected';await putLead(l);rejected++}
+        else throw new Error(r.status===401?'Sync key not accepted':j.error||('Server said '+r.status));
+      }catch(e){err=e.name==='AbortError'?'Timed out':e.message;break}finally{clearTimeout(t)}
+    }
+  }finally{syncing=false;refreshStatus()}
+  return{sent,rejected,err};
+}
+addEventListener('online',()=>{refreshStatus();sync()});addEventListener('offline',refreshStatus);
+setInterval(sync,60000);
+
+/* ---------- CSV export ---------- */
+const COLS=['syncedAt','syncError','createdAt','event','staff','device','type','businessName','firstName','lastName','phone','email','zip','contactPref','games','items','channels','valueRange','insured','notes','consent','consentAt','consentText','source','id'];
+function cell(v){if(Array.isArray(v))v=v.join('; ');v=v==null?'':String(v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}
+async function exportCsv(){
+  const leads=await allLeads();if(!leads.length)return toast('No leads to export yet');
+  const csv='﻿'+[COLS.join(','),...leads.map(l=>COLS.map(c=>cell(l[c])).join(','))].join('\r\n');
+  const s=cfg(), slug=(s.event||'show').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'show';
+  const name=`tcg-leads-${slug}-${(s.device||'ipad').toLowerCase().replace(/[^a-z0-9]+/g,'')}-${new Date().toISOString().slice(0,16).replace(/[:T]/g,'')}.csv`;
+  const file=new File([csv],name,{type:'text/csv'});let done=false;
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:name});done=true}catch(e){if(e.name==='AbortError')return}
+  }
+  if(!done){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),10000)}
+  const at=new Date().toISOString();for(const l of leads){if(!l.exportedAt){l.exportedAt=at;await putLead(l)}}
+  refreshStatus();toast(`Exported ${leads.length} lead${leads.length>1?'s':''}`);
+}
+
+/* ---------- staff panel ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600)}
+let taps=0,tapT;
+$('#logo').addEventListener('click',()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,2500);
+  if(taps>=5){taps=0;$('#pinIn').value='';$('#pinOv').classList.add('on');setTimeout(()=>$('#pinIn').focus(),50)}});
+$('#pinCancel').onclick=()=>$('#pinOv').classList.remove('on');
+function tryPin(){if($('#pinIn').value===String(cfg().pin)){$('#pinOv').classList.remove('on');openStaff(false)}else{$('#pinIn').value='';toast('Wrong PIN')}}
+$('#pinOk').onclick=tryPin;$('#pinIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin()});
+function openStaff(setup){
+  const s=cfg();$('#staffTitle').textContent=setup?'Set up this iPad':'Staff panel';
+  $('#staffData').hidden=setup;$('#dangerZone').hidden=setup;$('#staffClose').hidden=setup;
+  $('#cfEvent').value=s.event||'';$('#cfStaff').value=s.staff||'';$('#cfPin').value=s.pin||'';$('#cfDevice').value=s.device||'';
+  $('#cfToken').value=s.token||'';$('#delConfirm').value='';
+  $('#syncNote').textContent=s.token?'':'No sync key set';$('#staffOv').classList.add('on');refreshStatus();
+}
+$('#staffClose').onclick=()=>$('#staffOv').classList.remove('on');
+$('#cfSave').onclick=()=>{
+  const pin=$('#cfPin').value.trim();
+  if(!/^\d{4,8}$/.test(pin))return toast('PIN must be 4 to 8 digits');
+  setCfg({event:$('#cfEvent').value.trim(),staff:$('#cfStaff').value.trim(),pin,device:$('#cfDevice').value.trim(),token:$('#cfToken').value.trim()});
+  $('#staffOv').classList.remove('on');toast('Saved');refreshStatus();sync();
+};
+$('#exportBtn').onclick=exportCsv;
+$('#syncBtn').onclick=async()=>{$('#syncNote').textContent='Syncing…';const r=await sync(true);
+  $('#syncNote').textContent=r.skipped?'No sync key set':r.busy?'Already syncing…':r.err?`Sent ${r.sent}, then stopped: ${r.err}`:r.rejected?`Sent ${r.sent}. ${r.rejected} rejected, check the CSV.`:`Sent ${r.sent}. All caught up.`};
+$('#delBtn').onclick=async()=>{
+  const leads=await allLeads();
+  if(leads.some(isPending))return toast('Export or sync every lead first');
+  if($('#delConfirm').value.trim()!=='DELETE')return toast('Type DELETE to confirm');
+  await clearLeads();$('#delConfirm').value='';refreshStatus();toast('All leads removed from this iPad');
+};
+
+/* ---------- boot ---------- */
+/* one-time setup link: /show/index.html?k=SYNC_KEY stores the key and removes it from the address bar */
+try{const u=new URL(location.href),k=u.searchParams.get('k');if(k){setCfg(Object.assign(cfg(),{token:k}));u.searchParams.delete('k');history.replaceState(null,'',u.pathname+u.search)}}catch(e){}
+f=blank();renderChips();go(0);refreshStatus();
+if(!cfg().pin)openStaff(true);
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>setTimeout(refreshStatus,800)).catch(()=>{});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+</script>
+</body>
+</html>
