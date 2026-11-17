@@ -47,6 +47,12 @@ export default function HomePage() {
               <a className="btn btn-ghost btn-lg" href="tel:8009330710">
                 Call (800) 933-0710
               </a>
+              <a
+                className="btn btn-ghost btn-lg"
+                href="https://www.poke-trade.com/insurance/start?source=tcg-insurance&amp;campaign=homepage"
+              >
+                Track your collection free
+              </a>
             </div>
             <div className="hero-proof">
               <div className="proof">
