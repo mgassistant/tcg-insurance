@@ -16,6 +16,7 @@ import {
   type CoverageType,
   type IntakeItem,
 } from "@/lib/intake";
+import type { PortfolioQuoteImport } from "@/lib/portfolio-import";
 
 // ---- Local form shapes (strings while editing; coerced on submit) ----
 type FormItem = {
@@ -64,7 +65,7 @@ function newItem(category = "Trading Cards"): FormItem {
 
 const STEPS = ["Your info", "Coverage", "Items", "Review"] as const;
 
-export default function QuoteForm() {
+export default function QuoteForm({ portfolio = null }: { portfolio?: PortfolioQuoteImport | null }) {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -91,10 +92,19 @@ export default function QuoteForm() {
     social: "",
   });
 
-  const [coverageType, setCoverageType] = useState<CoverageType>("scheduled");
-  const [items, setItems] = useState<FormItem[]>([newItem()]);
-  const [blanketTotalItems, setBlanketTotalItems] = useState("");
-  const [blanketTotalValue, setBlanketTotalValue] = useState("");
+  const [coverageType, setCoverageType] = useState<CoverageType>(portfolio ? "blanket" : "scheduled");
+  const [items, setItems] = useState<FormItem[]>(() =>
+    portfolio?.items.length
+      ? portfolio.items.map(({ name, grade, grader, value }) => ({
+          ...newItem(),
+          fields: { cardName: name, gradeAuth: grade },
+          gradingCo: grader ? GRADING_COMPANIES.find((company) => company === grader) ?? "Other" : "",
+          value: String(value),
+        }))
+      : [newItem()],
+  );
+  const [blanketTotalItems, setBlanketTotalItems] = useState(portfolio ? String(portfolio.itemCount) : "");
+  const [blanketTotalValue, setBlanketTotalValue] = useState(portfolio?.marketValue ? String(portfolio.marketValue) : "");
   const [hasDocumentation, setHasDocumentation] = useState(false);
   const [documentationNote, setDocumentationNote] = useState("");
 
@@ -666,6 +676,11 @@ export default function QuoteForm() {
                 the first dollar with the same {usd(BLANKET_PER_ITEM_LIMIT)} per-item
                 limit.
               </div>
+              {portfolio && portfolio.unpricedCount > 0 && (
+                <p className="istep-hint">
+                  The Poké-Trade estimate excludes {portfolio.unpricedCount} unpriced items. Update the full blanket value for everything you want covered.
+                </p>
+              )}
               <div className="f-row">
                 <div className="field">
                   <label htmlFor="btItems">Total # of items</label>
@@ -684,6 +699,7 @@ export default function QuoteForm() {
                     id="btValue"
                     type="number"
                     min={0}
+                    step="0.01"
                     value={blanketTotalValue}
                     onChange={(e) => setBlanketTotalValue(e.target.value)}
                     placeholder="e.g. 180000"
@@ -704,6 +720,25 @@ export default function QuoteForm() {
       {/* ---------- Step 3: Item schedule ---------- */}
       {step === 2 && (
         <div className="istep-panel">
+          {portfolio ? (
+            <p className="note note-info">
+              {portfolio.items.length > 0
+                ? `Poké-Trade filled in ${portfolio.items.length} of your highest-valued cards or sealed products.`
+                : "Poké-Trade filled in your trading card and sealed product count."}
+              {" "}Review the details, add anything you want covered, and enter how each item is stored.
+              {portfolio.unpricedCount > 0 && " Add current values for unpriced items you want to cover."}
+            </p>
+          ) : (
+            <div className="note note-soft">
+              <p>Track your collection’s market value and keep an insurance inventory in Collection Protection.</p>
+              <a
+                className="btn btn-ghost btn-sm"
+                href="https://www.poke-trade.com/insurance/start?source=tcg-insurance&campaign=quote-items"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Create a free Poké-Trade account</a>
+            </div>
+          )}
           <p className="istep-help">
             {coverageType === "blanket"
               ? "List your most valuable items (up to your 10 highest) so underwriting can review them."
@@ -760,6 +795,7 @@ export default function QuoteForm() {
                               updateItem(it.id, { gradingCo: e.target.value })
                             }
                           >
+                            <option value="">Unspecified</option>
                             {GRADING_COMPANIES.map((g) => (
                               <option key={g} value={g}>
                                 {g}
@@ -821,6 +857,7 @@ export default function QuoteForm() {
                   <input
                     type="number"
                     min={0}
+                    step="0.01"
                     value={it.value}
                     onChange={(e) => updateItem(it.id, { value: e.target.value })}
                     placeholder="e.g. 12000"
